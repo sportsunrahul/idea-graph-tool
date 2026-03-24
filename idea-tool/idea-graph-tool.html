@@ -178,6 +178,75 @@
   .sf-pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; border: 1px solid var(--border2); color: var(--text2); cursor: pointer; transition: all 0.15s; font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
   .sf-pill:hover { border-color: var(--accent); color: var(--text); }
   .sf-pill.active { color: #fff; border-color: transparent; }
+
+  /* ── Hover tooltip ── */
+  #hover-tooltip { position: absolute; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 10px 14px; pointer-events: none; z-index: 35; max-width: 220px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); display: none; }
+  #ht-title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  #ht-desc { font-size: 11px; color: var(--text2); line-height: 1.5; margin-top: 5px; }
+  #ht-meta { font-size: 10px; color: var(--text3); margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+  #ht-resources { font-size: 10px; color: var(--accent2); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── Study Next card ── */
+  #study-next-card { margin: 10px 14px 0; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border2); border-left: 3px solid var(--teal); border-radius: var(--radius-sm); display: none; }
+  .sn-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--teal); font-family: 'JetBrains Mono', monospace; }
+  .sn-title { font-size: 13px; font-weight: 600; color: var(--text); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sn-meta { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-top: 3px; }
+  .sn-footer { display: flex; gap: 6px; margin-top: 8px; }
+  .sn-go { flex: 1; padding: 5px; background: var(--teal-dim); border: 1px solid var(--teal); border-radius: var(--radius-sm); color: var(--teal); font-size: 11px; cursor: pointer; font-family: 'Syne', sans-serif; transition: all 0.15s; }
+  .sn-go:hover { background: var(--teal); color: #0e0f11; font-weight: 600; }
+  .sn-count { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; }
+
+  /* ── View tabs ── */
+  #view-tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .view-tab { flex: 1; padding: 7px 0; font-size: 11px; background: none; border: none; color: var(--text3); cursor: pointer; font-family: 'Syne', sans-serif; transition: all 0.15s; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .view-tab:hover { color: var(--text2); }
+  .view-tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
+
+  /* ── Reading order list ── */
+  .ro-item { padding: 7px 14px; cursor: pointer; transition: background 0.15s; border-left: 2px solid transparent; }
+  .ro-item:hover { background: var(--surface2); }
+  .ro-item.selected { background: var(--surface2); border-left-color: var(--accent); }
+  .ro-blocked { font-size: 9px; color: var(--coral); margin-top: 2px; padding-left: 26px; font-family: 'JetBrains Mono', monospace; }
+  .ro-ready { font-size: 9px; color: var(--teal); margin-top: 2px; padding-left: 26px; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── arXiv fetch button ── */
+  .btn-arxiv { padding: 4px 10px; background: var(--surface3); border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text3); font-size: 10px; cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.15s; white-space: nowrap; }
+  .btn-arxiv:hover { border-color: var(--accent); color: var(--accent2); }
+  .btn-arxiv.loading { color: var(--amber); border-color: var(--amber); }
+  .btn-arxiv.success { color: var(--green); border-color: var(--green); }
+
+  /* ── Year field in sidebar ── */
+  .year-chip { font-size: 9px; color: var(--text3); font-family: 'JetBrains Mono', monospace; background: var(--surface3); padding: 1px 5px; border-radius: 3px; }
+
+  /* ── Detail footer with 5 buttons ── */
+  #detail-footer .detail-action { font-size: 10px; padding: 6px 4px; }
+
+  /* ── Paper search modal ── */
+  #paper-search-modal { position: absolute; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(5px); display: flex; align-items: flex-start; justify-content: center; z-index: 60; padding-top: 8vh; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  #paper-search-modal.open { opacity: 1; pointer-events: all; }
+  #ps-container { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; width: 620px; max-width: 92vw; max-height: 78vh; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(0,0,0,0.6); overflow: hidden; }
+  #ps-header { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  #ps-search-icon { font-size: 15px; color: var(--text3); flex-shrink: 0; }
+  #ps-input { flex: 1; background: transparent; border: none; font-size: 15px; color: var(--text); font-family: 'Syne', sans-serif; outline: none; }
+  #ps-input::placeholder { color: var(--text3); }
+  #ps-spinner { font-size: 12px; color: var(--amber); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; display: none; }
+  #ps-close { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; padding: 2px 4px; flex-shrink: 0; }
+  #ps-close:hover { color: var(--text); }
+  #ps-results { flex: 1; overflow-y: auto; }
+  #ps-results::-webkit-scrollbar { width: 4px; }
+  #ps-results::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  #ps-status { padding: 20px 18px; font-size: 12px; color: var(--text3); font-family: 'JetBrains Mono', monospace; text-align: center; }
+  .ps-result { padding: 13px 18px; cursor: pointer; transition: background 0.12s; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: start; }
+  .ps-result:hover { background: var(--surface2); }
+  .ps-result:last-child { border-bottom: none; }
+  .ps-result-main { min-width: 0; }
+  .ps-title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.35; }
+  .ps-meta { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-top: 3px; }
+  .ps-abstract { font-size: 11px; color: var(--text2); line-height: 1.55; margin-top: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ps-add-btn { padding: 5px 12px; background: var(--accent-glow); border: 1px solid var(--accent); border-radius: var(--radius-sm); color: var(--accent2); font-size: 11px; cursor: pointer; font-family: 'Syne', sans-serif; white-space: nowrap; transition: all 0.15s; align-self: start; margin-top: 2px; }
+  .ps-add-btn:hover { background: var(--accent); color: #fff; }
+  .ps-add-btn.added { background: var(--green-dim); border-color: var(--green); color: var(--green); cursor: default; }
+  .ps-footer { padding: 8px 18px; border-top: 1px solid var(--border); font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; display: flex; justify-content: space-between; }
 </style>
 <script>
   // Must be defined BEFORE the GIS script loads so the callback isn't missed
@@ -196,6 +265,16 @@
     <div id="sidebar-header">
       <div class="logo">Idea<span>Graph</span></div>
       <div class="node-count" id="node-count-label">0 nodes · 0 edges</div>
+    </div>
+
+    <div id="study-next-card">
+      <div class="sn-label">▶ Study Next</div>
+      <div class="sn-title" id="sn-title"></div>
+      <div class="sn-meta" id="sn-meta"></div>
+      <div class="sn-footer">
+        <button class="sn-go" id="sn-go-btn">Focus →</button>
+        <span class="sn-count" id="sn-count"></span>
+      </div>
     </div>
 
     <div id="quick-add">
@@ -218,6 +297,11 @@
       <div class="sf-pill" data-status="done">● Done</div>
     </div>
 
+    <div id="view-tabs">
+      <button class="view-tab active" data-view="list">All</button>
+      <button class="view-tab" data-view="order">Study Order</button>
+    </div>
+
     <div id="node-list"></div>
   </div>
 
@@ -225,6 +309,12 @@
   <div id="canvas-area">
     <canvas id="graph-canvas"></canvas>
     <div id="zoom-indicator">100%</div>
+    <div id="hover-tooltip">
+      <div id="ht-title"></div>
+      <div id="ht-desc"></div>
+      <div id="ht-meta"></div>
+      <div id="ht-resources"></div>
+    </div>
     <div id="drive-status"></div>
     <div id="link-hint">Click a node to link → Esc to cancel</div>
     <div id="minimap"><canvas id="minimap-canvas"></canvas></div>
@@ -265,8 +355,9 @@
       </div>
     </div>
     <div id="detail-footer">
-      <button class="detail-action" id="detail-link-btn">+ Link</button>
+      <button class="detail-action" id="detail-link-btn" title="Link as related">+ Link</button>
       <button class="detail-action" id="detail-prereq-btn" title="Link as prerequisite">↳ Prereq</button>
+      <button class="detail-action" id="detail-improves-btn" title="Link as improves upon">↑ Improves</button>
       <button class="detail-action" id="detail-edit-btn">Edit</button>
       <button class="detail-action danger" id="detail-delete-btn">Delete</button>
     </div>
@@ -300,8 +391,16 @@
         <div class="mastery-picker" id="mastery-picker"></div>
       </div>
       <div class="form-row">
-        <label class="form-label">RESOURCES (one URL per line)</label>
-        <textarea class="form-input" id="form-resources" placeholder="https://..." style="min-height:58px"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <label class="form-label" style="margin-bottom:0">RESOURCES (one URL per line)</label>
+          <button type="button" class="btn-arxiv" id="arxiv-fetch-btn">↓ fetch arXiv</button>
+        </div>
+        <textarea class="form-input" id="form-resources" placeholder="https://arxiv.org/abs/…" style="min-height:58px"></textarea>
+        <div id="arxiv-suggestions" style="display:none;margin-top:6px;font-size:10px;color:var(--teal);font-family:'JetBrains Mono',monospace"></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">YEAR</label>
+        <input class="form-input" id="form-year" type="number" placeholder="e.g. 2024" min="1990" max="2030" style="width:110px" />
       </div>
       <div class="form-actions">
         <button class="btn-cancel" id="modal-cancel">Cancel</button>
@@ -310,9 +409,29 @@
     </div>
   </div>
 
+  <!-- Paper Search Modal -->
+  <div id="paper-search-modal">
+    <div id="ps-container">
+      <div id="ps-header">
+        <span id="ps-search-icon">⌕</span>
+        <input id="ps-input" type="text" placeholder="Search arXiv papers… (title, keywords, authors)" autocomplete="off" spellcheck="false" />
+        <span id="ps-spinner">searching…</span>
+        <button id="ps-close">✕</button>
+      </div>
+      <div id="ps-results">
+        <div id="ps-status">Type to search arXiv — press Enter or wait</div>
+      </div>
+      <div class="ps-footer">
+        <span>Results from arXiv.org</span>
+        <span>Click a paper to add it to your graph</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Toolbar -->
   <div id="toolbar">
     <button class="tb-btn" id="tb-add" title="Add node (⌘K)">＋</button>
+    <button class="tb-btn" id="tb-paper-search" title="Search arXiv papers (⌘P)">⌕</button>
     <div class="tb-sep"></div>
     <button class="tb-btn" id="tb-link" title="Link mode (L)">⟶</button>
     <div class="tb-sep"></div>
@@ -349,6 +468,20 @@ const COLOR_PALETTE = [
   { id:'gray',   fill:'rgba(120,125,140,0.20)', stroke:'#787d8c', text:'#aab0c0' },
 ];
 
+// Deterministically map a tag string to a color id (skips purple, reserved for untagged)
+function tagToColor(tag) {
+  const opts = ['teal', 'amber', 'coral', 'green', 'gray'];
+  let h = 0;
+  for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) & 0xffff;
+  return opts[h % opts.length];
+}
+
+const ARXIV_CAT_TAGS = {
+  'cs.CV': 'computer-vision', 'cs.LG': 'machine-learning', 'cs.AI': 'ai',
+  'cs.NE': 'neural-networks', 'cs.RO': 'robotics', 'cs.CL': 'nlp',
+  'stat.ML': 'machine-learning', 'eess.IV': 'image-processing', 'cs.IR': 'information-retrieval',
+};
+
 const STATUS_OPTIONS = [
   { id: 'want',        label: 'Want to Study', color: '#787d8c', icon: '○' },
   { id: 'in-progress', label: 'In Progress',   color: '#f0a830', icon: '◑' },
@@ -362,14 +495,18 @@ let nextId = 1;
 let selectedNode = null;
 let linkSourceNode = null;
 let linkMode = false;
-let prereqLinkMode = false; // when true, new edges get type:'prerequisite'
+let prereqLinkMode = false;   // when true, new edges get type:'prerequisite'
+let improvesLinkMode = false; // when true, new edges get type:'improves'
 let searchQuery = '';
 let activeTag = null;
 let activeStatus = null;
+let sidebarView = 'list'; // 'list' | 'order'
 let selectedColor = 'purple';
 let selectedStatus = 'want';
 let selectedMastery = 0;
+let colorExplicitlySet = false;
 let editingNodeId = null;
+let hoveredNode = null;
 
 // Camera
 let camX = 0, camY = 0, camZoom = 1;
@@ -574,9 +711,8 @@ async function loadFromGDrive() {
     }
     const d = JSON.parse(text);
     if (d && Array.isArray(d.nodes)) {
-      nodes = d.nodes;
-      edges = d.edges || [];
-      nextId = d.nextId || (Math.max(0, ...d.nodes.map(n => n.id)) + 1);
+      const m = migrateData(d);
+      nodes = m.nodes; edges = m.edges; nextId = m.nextId;
       try { localStorage.setItem('ideagraph_v1', JSON.stringify({ nodes, edges, nextId })); } catch(_) {}
       updateSidebar(); draw(); fitView();
       toast('Loaded from Drive ☁');
@@ -614,15 +750,304 @@ function updateDriveUI() {
   }
 }
 
+// ── arXiv auto-fill ────────────────────────────────────────────────────
+function extractArxivId(url) {
+  const m = url.match(/arxiv\.org\/(?:abs|pdf)\/(\d{4}\.\d{4,5})/i);
+  return m ? m[1].replace(/v\d+$/, '') : null;
+}
+
+async function fetchArxivMetadata(arxivId) {
+  const url = `https://export.arxiv.org/api/query?id_list=${arxivId}&max_results=1`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('arXiv fetch failed');
+  const xml = await resp.text();
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  const entry = doc.getElementsByTagName('entry')[0];
+  if (!entry) throw new Error('No entry found');
+  const title = entry.getElementsByTagName('title')[0]?.textContent?.trim().replace(/\s+/g, ' ');
+  const summary = entry.getElementsByTagName('summary')[0]?.textContent?.trim().replace(/\s+/g, ' ');
+  const published = entry.getElementsByTagName('published')[0]?.textContent;
+  const year = published ? parseInt(published.slice(0, 4)) : null;
+  const cats = [...entry.getElementsByTagName('category')].map(c => c.getAttribute('term'));
+  const tags = [...new Set(cats.map(c => ARXIV_CAT_TAGS[c]).filter(Boolean))];
+  return { title, abstract: summary ? summary.slice(0, 280) + (summary.length > 280 ? '…' : '') : '', year, tags };
+}
+
+let arxivFetchTimer = null;
+function scheduleArxivFetch() {
+  clearTimeout(arxivFetchTimer);
+  arxivFetchTimer = setTimeout(async () => {
+    const lines = document.getElementById('form-resources').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    const arxivIds = lines.map(extractArxivId).filter(Boolean);
+    if (!arxivIds.length) return;
+    const btn = document.getElementById('arxiv-fetch-btn');
+    btn.textContent = '⟳ fetching…'; btn.classList.add('loading');
+    try {
+      const meta = await fetchArxivMetadata(arxivIds[0]);
+      btn.textContent = '✓ fetched'; btn.classList.remove('loading'); btn.classList.add('success');
+      setTimeout(() => { btn.textContent = '↓ fetch arXiv'; btn.classList.remove('success'); }, 3000);
+      // Auto-fill empty fields
+      if (!document.getElementById('form-title').value.trim() && meta.title)
+        document.getElementById('form-title').value = meta.title;
+      if (!document.getElementById('form-desc').value.trim() && meta.abstract)
+        document.getElementById('form-desc').value = meta.abstract;
+      if (!document.getElementById('form-year').value && meta.year)
+        document.getElementById('form-year').value = meta.year;
+      // Show tag suggestions
+      if (meta.tags.length) {
+        const existingTags = document.getElementById('form-tags').value.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);
+        const newTags = meta.tags.filter(t => !existingTags.includes(t));
+        if (newTags.length) {
+          const sugEl = document.getElementById('arxiv-suggestions');
+          sugEl.style.display = '';
+          sugEl.innerHTML = `Suggested tags: ${newTags.map(t =>
+            `<span style="cursor:pointer;text-decoration:underline" onclick="addSuggestedTag('${t}')">${t}</span>`
+          ).join(', ')}`;
+        }
+      }
+      toast('Paper metadata fetched from arXiv ✓');
+    } catch(err) {
+      btn.textContent = '↓ fetch arXiv'; btn.classList.remove('loading');
+      toast('arXiv fetch failed — check URL or network');
+    }
+  }, 800);
+}
+
+window.addSuggestedTag = function(tag) {
+  const el = document.getElementById('form-tags');
+  const existing = el.value.trim();
+  el.value = existing ? existing + ', ' + tag : tag;
+};
+
+// ── Paper Search (arXiv) ───────────────────────────────────────────────
+async function searchArxivPapers(query) {
+  const q = encodeURIComponent(query.trim());
+  const url = `https://export.arxiv.org/api/query?search_query=all:${q}&start=0&max_results=10&sortBy=relevance&sortOrder=descending`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('Search failed');
+  const xml = await resp.text();
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  return [...doc.getElementsByTagName('entry')].map(entry => {
+    const idText = entry.getElementsByTagName('id')[0]?.textContent?.trim() || '';
+    const arxivId = idText.match(/(\d{4}\.\d{4,5})/)?.[1];
+    if (!arxivId) return null;
+    const title = entry.getElementsByTagName('title')[0]?.textContent?.trim().replace(/\s+/g, ' ') || '';
+    const summary = entry.getElementsByTagName('summary')[0]?.textContent?.trim().replace(/\s+/g, ' ') || '';
+    const published = entry.getElementsByTagName('published')[0]?.textContent || '';
+    const year = published ? parseInt(published.slice(0, 4)) : null;
+    const authors = [...entry.getElementsByTagName('author')]
+      .map(a => a.getElementsByTagName('name')[0]?.textContent?.trim()).filter(Boolean);
+    const firstAuthor = authors[0] ? authors[0].split(' ').pop() : '';  // last name
+    const authorStr = authors.length > 1 ? `${firstAuthor} et al.` : firstAuthor;
+    const cats = [...entry.getElementsByTagName('category')].map(c => c.getAttribute('term')).filter(Boolean);
+    const tags = [...new Set(cats.map(c => ARXIV_CAT_TAGS[c]).filter(Boolean))];
+    return { arxivId, title, abstract: summary, year, authorStr, tags, cats, url: `https://arxiv.org/abs/${arxivId}` };
+  }).filter(Boolean);
+}
+
+function isPaperInGraph(arxivId, title) {
+  return nodes.some(n =>
+    (n.resources || []).some(r => r.includes(arxivId)) ||
+    n.title.toLowerCase() === title.toLowerCase()
+  );
+}
+
+let psSearchTimer = null;
+
+function openPaperSearch() {
+  document.getElementById('paper-search-modal').classList.add('open');
+  setTimeout(() => document.getElementById('ps-input').focus(), 60);
+}
+function closePaperSearch() {
+  document.getElementById('paper-search-modal').classList.remove('open');
+  document.getElementById('ps-input').value = '';
+  document.getElementById('ps-results').innerHTML = '<div id="ps-status">Type to search arXiv — press Enter or wait</div>';
+}
+
+function renderPaperResults(papers, query) {
+  const container = document.getElementById('ps-results');
+  if (!papers.length) {
+    container.innerHTML = `<div id="ps-status">No results for "${query}"</div>`;
+    return;
+  }
+  container.innerHTML = '';
+  papers.forEach(p => {
+    const inGraph = isPaperInGraph(p.arxivId, p.title);
+    const catStr = p.cats.filter(c => c.startsWith('cs.')).slice(0, 2).join(', ');
+    const tagChips = p.tags.length
+      ? p.tags.map(t => `<span style="background:var(--surface3);padding:1px 5px;border-radius:3px;font-size:9px">${t}</span>`).join(' ')
+      : '';
+
+    const div = document.createElement('div');
+    div.className = 'ps-result';
+    div.innerHTML = `
+      <div class="ps-result-main">
+        <div class="ps-title">${p.title}</div>
+        <div class="ps-meta">${p.authorStr}${p.year ? ' · ' + p.year : ''}${catStr ? ' · ' + catStr : ''}  ${tagChips}</div>
+        <div class="ps-abstract">${p.abstract}</div>
+      </div>
+      <button class="ps-add-btn ${inGraph ? 'added' : ''}" data-id="${p.arxivId}">
+        ${inGraph ? '✓ In graph' : '+ Add'}
+      </button>`;
+
+    const btn = div.querySelector('.ps-add-btn');
+    if (!inGraph) {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        addPaperToGraph(p);
+        btn.textContent = '✓ In graph';
+        btn.classList.add('added');
+      };
+      div.onclick = () => {
+        addPaperToGraph(p);
+        btn.textContent = '✓ In graph';
+        btn.classList.add('added');
+      };
+    }
+    container.appendChild(div);
+  });
+}
+
+function addPaperToGraph(p) {
+  if (isPaperInGraph(p.arxivId, p.title)) { toast('Already in graph'); return; }
+  const desc = p.abstract.slice(0, 280) + (p.abstract.length > 280 ? '…' : '');
+  const w = screenToWorld(canvas.width / 2, canvas.height / 2);
+  createNode(
+    p.title, desc, p.tags.join(', '), null,
+    w.x + (Math.random() - 0.5) * 300,
+    w.y + (Math.random() - 0.5) * 200,
+    'want', 0, [p.url], p.year
+  );
+  toast(`Added: ${p.title.slice(0, 40)}…`);
+}
+
+function triggerPaperSearch() {
+  const query = document.getElementById('ps-input').value.trim();
+  if (query.length < 2) return;
+  clearTimeout(psSearchTimer);
+  const spinner = document.getElementById('ps-spinner');
+  spinner.style.display = 'inline';
+  document.getElementById('ps-results').innerHTML = '';
+  searchArxivPapers(query).then(results => {
+    spinner.style.display = 'none';
+    renderPaperResults(results, query);
+  }).catch(() => {
+    spinner.style.display = 'none';
+    document.getElementById('ps-results').innerHTML = `<div id="ps-status">Search failed — check network</div>`;
+  });
+}
+
+// ── Study order ────────────────────────────────────────────────────────
+function buildPrereqMap() {
+  // returns: { nodeId → [prerequisite nodeIds] }
+  const deps = {};
+  nodes.forEach(n => { deps[n.id] = []; });
+  edges.forEach(e => {
+    if (e.type === 'prerequisite' || e.type === 'improves') {
+      // source must be understood before target
+      if (!deps[e.target]) deps[e.target] = [];
+      deps[e.target].push(e.source);
+    }
+  });
+  return deps;
+}
+
+function getTopologicalStudyOrder() {
+  const deps = buildPrereqMap();
+  const dependents = {};
+  nodes.forEach(n => { dependents[n.id] = []; });
+  edges.forEach(e => {
+    if (e.type === 'prerequisite' || e.type === 'improves') {
+      if (!dependents[e.source]) dependents[e.source] = [];
+      dependents[e.source].push(e.target);
+    }
+  });
+
+  const inDeg = {};
+  nodes.forEach(n => { inDeg[n.id] = (deps[n.id] || []).length; });
+
+  const queue = nodes.filter(n => inDeg[n.id] === 0).map(n => n.id);
+  const order = [];
+  const seen = new Set();
+
+  while (queue.length) {
+    const id = queue.shift();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const node = nodes.find(n => n.id === id);
+    if (node) order.push(node);
+    (dependents[id] || []).forEach(depId => {
+      inDeg[depId]--;
+      if (inDeg[depId] <= 0 && !seen.has(depId)) queue.push(depId);
+    });
+  }
+  // Append any nodes not reached (disconnected or cycle)
+  nodes.forEach(n => { if (!seen.has(n.id)) order.push(n); });
+  return order;
+}
+
+function getNextToStudy() {
+  const deps = buildPrereqMap();
+  return nodes
+    .filter(n => (n.status || 'want') !== 'done')
+    .filter(n => (deps[n.id] || []).every(pId => {
+      const prereq = nodes.find(x => x.id === pId);
+      return prereq && prereq.status === 'done';
+    }))
+    .sort((a, b) => getEdgesFor(b.id).length - getEdgesFor(a.id).length);
+}
+
+function updateStudyNextCard() {
+  const card = document.getElementById('study-next-card');
+  if (!card) return;
+  const ready = getNextToStudy();
+  if (!ready.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  const n = ready[0];
+  const stOpt = STATUS_OPTIONS.find(s => s.id === (n.status || 'want')) || STATUS_OPTIONS[0];
+  document.getElementById('sn-title').textContent = n.title;
+  const parts = [stOpt.icon + ' ' + stOpt.label];
+  if (n.year) parts.push(n.year);
+  parts.push(getEdgesFor(n.id).length + ' connections');
+  document.getElementById('sn-meta').textContent = parts.join('  ·  ');
+  document.getElementById('sn-count').textContent = ready.length > 1 ? `+${ready.length - 1} ready` : '';
+  document.getElementById('sn-go-btn').onclick = () => selectAndFocus(n.id);
+}
+
 // ── Persistence ────────────────────────────────────────────────────────
 function saveData() {
   try { localStorage.setItem('ideagraph_v1', JSON.stringify({ nodes, edges, nextId })); } catch(e) {}
   scheduleDriveSync();
 }
+// ── Migration — applied on every load so old data is always upgraded ───
+function migrateNode(n) {
+  return {
+    status: 'want', mastery: 0, resources: [], year: null, desc: '', tags: [],
+    ...n,
+    tags: Array.isArray(n.tags) ? n.tags : [],
+    resources: Array.isArray(n.resources) ? n.resources : [],
+    mastery: typeof n.mastery === 'number' ? n.mastery : 0,
+  };
+}
+function migrateEdge(e) {
+  return { type: 'related', label: null, ...e };
+}
+function migrateData(d) {
+  return {
+    nodes: (d.nodes || []).map(migrateNode),
+    edges: (d.edges || []).map(migrateEdge),
+    nextId: d.nextId || (Math.max(0, ...(d.nodes||[]).map(n=>n.id)) + 1),
+  };
+}
+
 function loadData() {
   try {
     const raw = localStorage.getItem('ideagraph_v1');
-    if (raw) { const d = JSON.parse(raw); nodes = d.nodes; edges = d.edges; nextId = d.nextId; return true; }
+    if (raw) {
+      const m = migrateData(JSON.parse(raw));
+      nodes = m.nodes; edges = m.edges; nextId = m.nextId;
+      return true;
+    }
   } catch(e) {}
   return false;
 }
@@ -667,6 +1092,30 @@ function hitNode(sx, sy) {
 }
 
 // ── Rendering ──────────────────────────────────────────────────────────
+function drawClusterHalos() {
+  const tagGroups = {};
+  nodes.forEach(n => {
+    (n.tags || []).forEach(t => {
+      if (!tagGroups[t]) tagGroups[t] = [];
+      tagGroups[t].push(n);
+    });
+  });
+  Object.entries(tagGroups).forEach(([tag, group]) => {
+    if (group.length < 2) return;
+    const pal = COLOR_PALETTE.find(c => c.id === tagToColor(tag)) || COLOR_PALETTE[0];
+    group.forEach(n => {
+      const r = nodeRadius(n) + 36;
+      const g = ctx.createRadialGradient(n.x, n.y, r * 0.2, n.x, n.y, r);
+      g.addColorStop(0, pal.stroke + '18');
+      g.addColorStop(1, pal.stroke + '00');
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+    });
+  });
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawGrid();
@@ -674,6 +1123,7 @@ function draw() {
   ctx.translate(canvas.width/2, canvas.height/2);
   ctx.scale(camZoom, camZoom);
   ctx.translate(camX, camY);
+  drawClusterHalos();
   drawEdges();
   drawNodes();
   if (linkMode && linkSourceNode) drawLinkGhost();
@@ -706,6 +1156,7 @@ function drawEdges() {
     const x1 = a.x + nx*ra, y1 = a.y + ny*ra;
     const x2 = b.x - nx*rb, y2 = b.y - ny*rb;
 
+    const isImproves = e.type === 'improves';
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
@@ -713,6 +1164,10 @@ function drawEdges() {
       ctx.setLineDash([6, 4]);
       ctx.strokeStyle = isHighlighted ? 'rgba(62,207,176,0.7)' : 'rgba(62,207,176,0.25)';
       ctx.lineWidth = isHighlighted ? 1.5 : 1;
+    } else if (isImproves) {
+      ctx.setLineDash([]);
+      ctx.strokeStyle = isHighlighted ? 'rgba(240,168,48,0.85)' : 'rgba(240,168,48,0.35)';
+      ctx.lineWidth = isHighlighted ? 2 : 1.2;
     } else {
       ctx.setLineDash([]);
       ctx.strokeStyle = isHighlighted ? 'rgba(123,110,246,0.6)' : 'rgba(255,255,255,0.1)';
@@ -721,20 +1176,42 @@ function drawEdges() {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Arrow: always on prereq edges, only on highlighted for related
-    if (isHighlighted || isPrereq) {
+    // Arrow: always on prereq + improves edges, only on highlighted for related
+    if (isHighlighted || isPrereq || isImproves) {
       const angle = Math.atan2(dy, dx);
       ctx.save();
       ctx.translate(x2, y2);
       ctx.rotate(angle);
-      ctx.beginPath();
-      ctx.moveTo(-6, -4); ctx.lineTo(0, 0); ctx.lineTo(-6, 4);
-      ctx.strokeStyle = isPrereq
-        ? (isHighlighted ? 'rgba(62,207,176,0.9)' : 'rgba(62,207,176,0.4)')
-        : 'rgba(123,110,246,0.8)';
-      ctx.lineWidth = 1.2;
+      if (isImproves) {
+        // Double chevron for "improves" to distinguish from prereq
+        ctx.beginPath();
+        ctx.moveTo(-10, -4); ctx.lineTo(-5, 0); ctx.lineTo(-10, 4);
+        ctx.moveTo(-5, -4);  ctx.lineTo(0, 0);  ctx.lineTo(-5, 4);
+        ctx.strokeStyle = isHighlighted ? 'rgba(240,168,48,0.95)' : 'rgba(240,168,48,0.55)';
+        ctx.lineWidth = 1.3;
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(-6, -4); ctx.lineTo(0, 0); ctx.lineTo(-6, 4);
+        ctx.strokeStyle = isPrereq
+          ? (isHighlighted ? 'rgba(62,207,176,0.9)' : 'rgba(62,207,176,0.4)')
+          : 'rgba(123,110,246,0.8)';
+        ctx.lineWidth = 1.2;
+      }
       ctx.stroke();
       ctx.restore();
+    }
+
+    // Edge label for "improves" (shown at midpoint when highlighted or zoomed in enough)
+    if (isImproves && e.label && (isHighlighted || camZoom > 0.7)) {
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      const labelSize = Math.min(9, 8 / camZoom);
+      ctx.font = `400 ${labelSize}px 'JetBrains Mono', monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(240,168,48,0.8)';
+      ctx.shadowColor = '#0e0f11'; ctx.shadowBlur = 4 / camZoom;
+      ctx.fillText(e.label, mx, my - 8 / camZoom);
+      ctx.shadowBlur = 0;
     }
   });
 }
@@ -785,36 +1262,57 @@ function drawNodes() {
       ctx.stroke();
     }
 
-    // Recency dot
+    // Recency dot (only show for very recently created: 5 min)
     const age = Date.now() - n.createdAt;
-    if (age < 3600000) { // less than 1 hour
+    if (age < 300000) {
       ctx.beginPath();
-      ctx.arc(n.x + r - 4, n.y - r + 4, 4, 0, Math.PI*2);
+      ctx.arc(n.x + r - 3, n.y - r + 3, 3, 0, Math.PI*2);
       ctx.fillStyle = '#5ecb8c';
       ctx.fill();
     }
 
-    // Label
-    const fontSize = Math.max(9, Math.min(12, r * 0.38));
-    ctx.font = `500 ${fontSize}px 'Syne', sans-serif`;
+    // Status badge — small filled circle at bottom-right of node
+    const badgeR = Math.max(4, r * 0.18);
+    const badgeX = n.x + r * 0.72;
+    const badgeY = n.y + r * 0.72;
+    ctx.beginPath();
+    ctx.arc(badgeX, badgeY, badgeR, 0, Math.PI*2);
+    ctx.fillStyle = statusColor;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(14,15,17,0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Connection count — centered inside node
+    const ec = getEdgesFor(n.id).length;
+    ctx.font = `500 ${Math.max(8, r * 0.32)}px 'JetBrains Mono', monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = isFiltered ? palette.text : 'rgba(255,255,255,0.25)';
+    ctx.fillStyle = isFiltered ? palette.text + 'aa' : 'rgba(255,255,255,0.15)';
+    ctx.fillText(ec || '', n.x, n.y);
 
-    const maxW = r * 1.6;
-    let title = n.title;
-    while (ctx.measureText(title).width > maxW && title.length > 3) {
-      title = title.slice(0, -1);
+    // Title label below node — full text, zoom-adaptive, always readable
+    if (camZoom > 0.28) {
+      const labelFontPx = Math.min(13, 11 / camZoom);  // ~11px on screen at any zoom
+      ctx.font = `500 ${labelFontPx}px 'Syne', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      const labelY = n.y + r + 7 / camZoom;
+      // Subtle shadow for readability over edges/halos
+      ctx.shadowColor = '#0e0f11';
+      ctx.shadowBlur = 6 / camZoom;
+      ctx.fillStyle = isFiltered ? palette.text : 'rgba(255,255,255,0.18)';
+      ctx.fillText(n.title, n.x, labelY);
+      ctx.shadowBlur = 0;
     }
-    if (title !== n.title) title += '…';
-    ctx.fillText(title, n.x, n.y);
 
-    // Connection count badge
-    const ec = getEdgesFor(n.id).length;
-    if (ec > 0) {
-      ctx.font = `400 8px 'JetBrains Mono', monospace`;
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.fillText(ec, n.x, n.y + r * 0.6);
+    // Hover highlight — extra glow ring
+    if (hoveredNode && hoveredNode.id === n.id && !isSelected) {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r + 3, 0, Math.PI*2);
+      ctx.strokeStyle = statusColor + '66';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
     }
 
     ctx.restore();
@@ -888,26 +1386,63 @@ function getFilteredNodes() {
 }
 
 // ── Sidebar update ────────────────────────────────────────────────────
+function nodeListItem(n) {
+  const pal = COLOR_PALETTE.find(c=>c.id===n.color)||COLOR_PALETTE[0];
+  const stOpt = STATUS_OPTIONS.find(s=>s.id===(n.status||'want'))||STATUS_OPTIONS[0];
+  const metaParts = [getEdgesFor(n.id).length + ' connections'];
+  if (n.year) metaParts.push(n.year);
+  if (n.mastery) metaParts.push(MASTERY_LABELS[n.mastery]);
+  const div = document.createElement('div');
+  div.className = 'node-item' + (selectedNode?.id === n.id ? ' selected' : '');
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="color:${stOpt.color};font-size:11px;flex-shrink:0">${stOpt.icon}</span>
+      <div class="node-item-title">${n.title}</div>
+      ${n.year ? `<span class="year-chip">${n.year}</span>` : ''}
+    </div>
+    <div class="node-item-meta">${metaParts.join(' · ')}</div>
+    ${n.tags.length ? `<div class="node-item-tags">${n.tags.map(t=>`<span class="node-tag" style="background:${pal.fill};color:${pal.text};border:1px solid ${pal.stroke}22">${t}</span>`).join('')}</div>` : ''}
+  `;
+  div.onclick = () => selectNode(n);
+  return div;
+}
+
 function updateSidebar() {
   const filtered = getFilteredNodes();
   const list = document.getElementById('node-list');
   list.innerHTML = '';
-  [...filtered].sort((a,b) => b.createdAt - a.createdAt).forEach(n => {
-    const pal = COLOR_PALETTE.find(c=>c.id===n.color)||COLOR_PALETTE[0];
-    const stOpt = STATUS_OPTIONS.find(s=>s.id===(n.status||'want'))||STATUS_OPTIONS[0];
-    const div = document.createElement('div');
-    div.className = 'node-item' + (selectedNode?.id === n.id ? ' selected' : '');
-    div.innerHTML = `
-      <div style="display:flex;align-items:center;gap:6px">
-        <span style="color:${stOpt.color};font-size:11px;flex-shrink:0">${stOpt.icon}</span>
-        <div class="node-item-title">${n.title}</div>
-      </div>
-      <div class="node-item-meta">${getEdgesFor(n.id).length} connections · ${timeAgo(n.createdAt)}${n.mastery ? ' · ' + MASTERY_LABELS[n.mastery] : ''}</div>
-      ${n.tags.length ? `<div class="node-item-tags">${n.tags.map(t=>`<span class="node-tag" style="background:${pal.fill};color:${pal.text};border:1px solid ${pal.stroke}22">${t}</span>`).join('')}</div>` : ''}
-    `;
-    div.onclick = () => selectNode(n);
-    list.appendChild(div);
-  });
+
+  if (sidebarView === 'order') {
+    const deps = buildPrereqMap();
+    const order = getTopologicalStudyOrder().filter(n => filtered.includes(n));
+    order.forEach((n, i) => {
+      const stOpt = STATUS_OPTIONS.find(s=>s.id===(n.status||'want'))||STATUS_OPTIONS[0];
+      const blockers = (deps[n.id]||[]).filter(pId => {
+        const p = nodes.find(x=>x.id===pId);
+        return p && p.status !== 'done';
+      }).map(pId => nodes.find(x=>x.id===pId)?.title || '?');
+      const isReady = blockers.length === 0 && (n.status||'want') !== 'done';
+      const div = document.createElement('div');
+      div.className = 'ro-item' + (selectedNode?.id === n.id ? ' selected' : '');
+      const yearStr = n.year ? ` · ${n.year}` : '';
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:9px;color:var(--text3);font-family:'JetBrains Mono',monospace;width:18px;text-align:right;flex-shrink:0">${i+1}</span>
+          <span style="color:${stOpt.color};font-size:11px;flex-shrink:0">${stOpt.icon}</span>
+          <div class="node-item-title">${n.title}</div>
+          ${n.year ? `<span class="year-chip">${n.year}</span>` : ''}
+        </div>
+        ${blockers.length ? `<div class="ro-blocked">⊘ needs: ${blockers.join(', ')}</div>` : ''}
+        ${isReady ? `<div class="ro-ready">✓ ready to study</div>` : ''}
+      `;
+      div.onclick = () => selectNode(n);
+      list.appendChild(div);
+    });
+  } else {
+    [...filtered].sort((a,b) => b.createdAt - a.createdAt).forEach(n => {
+      list.appendChild(nodeListItem(n));
+    });
+  }
 
   const done = nodes.filter(n=>n.status==='done').length;
   const inProg = nodes.filter(n=>n.status==='in-progress').length;
@@ -925,6 +1460,8 @@ function updateSidebar() {
     pill.onclick = () => { activeTag = activeTag === t ? null : t; updateSidebar(); draw(); };
     tagsEl.appendChild(pill);
   });
+
+  updateStudyNextCard();
 }
 
 // ── Detail panel ──────────────────────────────────────────────────────
@@ -941,7 +1478,7 @@ function selectNode(n) {
 function openDetailPanel(n) {
   const panel = document.getElementById('detail-panel');
   panel.classList.add('open');
-  document.getElementById('detail-title').textContent = n.title;
+  document.getElementById('detail-title').textContent = n.title + (n.year ? ` (${n.year})` : '');
 
   const dsDesc = document.getElementById('ds-desc');
   if (n.desc) { dsDesc.style.display=''; document.getElementById('detail-desc-text').textContent = n.desc; }
@@ -987,13 +1524,21 @@ function openDetailPanel(n) {
     }).join('');
   } else dsRes.style.display = 'none';
 
-  // Connected
+  // Connected — show edge type icons
   const connected = getConnected(n.id);
   const connList = document.getElementById('connected-list');
+  const EDGE_TYPE_ICON = { prerequisite: '↳', improves: '↑', related: '—' };
+  const EDGE_TYPE_COLOR = { prerequisite: 'var(--teal)', improves: 'var(--amber)', related: 'var(--text3)' };
   connList.innerHTML = connected.length ? connected.map(c => {
     const cp = COLOR_PALETTE.find(x=>x.id===c.color)||COLOR_PALETTE[0];
+    const edge = edges.find(e=>(e.source===n.id&&e.target===c.id)||(e.source===c.id&&e.target===n.id));
+    const eType = edge?.type || 'related';
+    const eIcon = EDGE_TYPE_ICON[eType];
+    const eColor = EDGE_TYPE_COLOR[eType];
+    const cYear = c.year ? ` <span style="font-size:9px;color:var(--text3)">${c.year}</span>` : '';
     return `<div class="connected-item" onclick="selectAndFocus(${c.id})">
-      <span class="conn-dot" style="background:${cp.stroke}"></span>${c.title}</div>`;
+      <span style="font-size:10px;color:${eColor};width:12px;flex-shrink:0">${eIcon}</span>
+      <span class="conn-dot" style="background:${cp.stroke}"></span>${c.title}${cYear}</div>`;
   }).join('') : '<div style="font-size:12px;color:var(--text3)">No connections yet</div>';
 
   // Suggestions (simple word overlap)
@@ -1067,16 +1612,19 @@ function animateCam(tx, ty, tz) {
 }
 
 // ── Node CRUD ─────────────────────────────────────────────────────────
-function createNode(title, desc, tags, color, x, y, status, mastery, resources) {
+function createNode(title, desc, tags, color, x, y, status, mastery, resources, year) {
+  const tagArr = tags.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);
+  const autoColor = color || (tagArr.length ? tagToColor(tagArr[0]) : 'purple');
   const n = {
     id: nextId++,
     title: title.trim(),
     desc: desc.trim(),
-    tags: tags.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean),
-    color: color || 'purple',
+    tags: tagArr,
+    color: autoColor,
     status: status || 'want',
     mastery: mastery || 0,
     resources: resources || [],
+    year: year || null,
     x: x !== undefined ? x : (Math.random()-0.5)*400,
     y: y !== undefined ? y : (Math.random()-0.5)*300,
     createdAt: Date.now(),
@@ -1112,8 +1660,11 @@ function openModal(prefillTitle, editId) {
   document.getElementById('form-desc').value = '';
   document.getElementById('form-tags').value = '';
   document.getElementById('form-resources').value = '';
+  document.getElementById('form-year').value = '';
+  document.getElementById('arxiv-suggestions').style.display = 'none';
   selectedStatus = 'want';
   selectedMastery = 0;
+  colorExplicitlySet = false;
   if (editId) {
     const n = nodes.find(x=>x.id===editId);
     if (n) {
@@ -1121,9 +1672,11 @@ function openModal(prefillTitle, editId) {
       document.getElementById('form-desc').value = n.desc||'';
       document.getElementById('form-tags').value = n.tags.join(', ');
       document.getElementById('form-resources').value = (n.resources||[]).join('\n');
+      document.getElementById('form-year').value = n.year || '';
       selectedColor = n.color;
       selectedStatus = n.status || 'want';
       selectedMastery = n.mastery || 0;
+      colorExplicitlySet = true; // treat existing color as explicit
     }
   }
   renderColorPicker();
@@ -1145,7 +1698,7 @@ function renderColorPicker() {
   ).join('');
 }
 
-window.setColor = function(id) { selectedColor = id; renderColorPicker(); };
+window.setColor = function(id) { selectedColor = id; colorExplicitlySet = true; renderColorPicker(); };
 
 function renderStatusPicker() {
   const sp = document.getElementById('status-picker');
@@ -1179,6 +1732,7 @@ function saveModal() {
   const tags = document.getElementById('form-tags').value;
   const resources = document.getElementById('form-resources').value
     .split('\n').map(s=>s.trim()).filter(Boolean);
+  const yearVal = parseInt(document.getElementById('form-year').value) || null;
   if (editingNodeId) {
     const n = nodes.find(x=>x.id===editingNodeId);
     if (n) {
@@ -1188,13 +1742,16 @@ function saveModal() {
       n.status = selectedStatus;
       n.mastery = selectedMastery;
       n.resources = resources;
+      n.year = yearVal;
+      // Auto re-color if color wasn't explicitly changed and tags changed
+      if (!colorExplicitlySet && n.tags.length) n.color = tagToColor(n.tags[0]);
       saveData(); updateSidebar(); draw();
       if (selectedNode?.id === editingNodeId) openDetailPanel(n);
       toast('Node updated');
     }
   } else {
     const w = screenToWorld(canvas.width/2, canvas.height/2);
-    createNode(title, desc, tags, selectedColor, w.x + (Math.random()-0.5)*120, w.y + (Math.random()-0.5)*80, selectedStatus, selectedMastery, resources);
+    createNode(title, desc, tags, colorExplicitlySet ? selectedColor : null, w.x + (Math.random()-0.5)*120, w.y + (Math.random()-0.5)*80, selectedStatus, selectedMastery, resources, yearVal);
     toast('Idea added');
   }
   closeModal();
@@ -1213,6 +1770,7 @@ function exitLinkMode() {
   linkMode = false;
   linkSourceNode = null;
   prereqLinkMode = false;
+  improvesLinkMode = false;
   document.getElementById('tb-link').classList.remove('active');
   canvas.classList.remove('linking');
   document.getElementById('link-hint').classList.remove('show');
@@ -1288,6 +1846,43 @@ function toast(msg) {
   toastTimer = setTimeout(()=>el.classList.remove('show'), 2200);
 }
 
+// ── Tooltip ────────────────────────────────────────────────────────────
+function showTooltip(n, clientX, clientY) {
+  const tt = document.getElementById('hover-tooltip');
+  const rect = canvas.getBoundingClientRect();
+  const stOpt = STATUS_OPTIONS.find(s => s.id === (n.status || 'want')) || STATUS_OPTIONS[0];
+
+  document.getElementById('ht-title').textContent = n.title;
+  const descEl = document.getElementById('ht-desc');
+  if (n.desc) { descEl.style.display = ''; descEl.textContent = n.desc; }
+  else descEl.style.display = 'none';
+
+  const mastLabel = MASTERY_LABELS[n.mastery || 0];
+  const connCount = getEdgesFor(n.id).length;
+  document.getElementById('ht-meta').textContent =
+    `${stOpt.icon} ${stOpt.label}  ·  ${mastLabel}  ·  ${connCount} connection${connCount !== 1 ? 's' : ''}`;
+
+  const resEl = document.getElementById('ht-resources');
+  if (n.resources && n.resources.length) {
+    resEl.style.display = '';
+    resEl.textContent = `↗ ${n.resources.length} resource${n.resources.length > 1 ? 's' : ''}`;
+  } else resEl.style.display = 'none';
+
+  // Position: follow cursor, flip if near edge
+  const ttW = 224, ttH = tt.offsetHeight || 80;
+  let x = clientX - rect.left + 14;
+  let y = clientY - rect.top + 14;
+  if (x + ttW > rect.width - 8) x = clientX - rect.left - ttW - 10;
+  if (y + ttH > rect.height - 8) y = clientY - rect.top - ttH - 10;
+  tt.style.left = x + 'px';
+  tt.style.top = y + 'px';
+  tt.style.display = 'block';
+}
+function hideTooltip() {
+  document.getElementById('hover-tooltip').style.display = 'none';
+  hoveredNode = null;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────
 function timeAgo(ts) {
   const s = (Date.now()-ts)/1000;
@@ -1306,7 +1901,7 @@ const quickInput = document.getElementById('quick-input');
 quickInput.addEventListener('keydown', e => {
   if (e.key === 'Enter' && quickInput.value.trim()) {
     const w = screenToWorld(canvas.width/2, canvas.height/2);
-    createNode(quickInput.value, '', '', 'purple', w.x+(Math.random()-0.5)*150, w.y+(Math.random()-0.5)*100);
+    createNode(quickInput.value, '', '', null, w.x+(Math.random()-0.5)*150, w.y+(Math.random()-0.5)*100);
     quickInput.value = '';
     toast('Idea added');
   }
@@ -1324,7 +1919,8 @@ document.getElementById('search-input').addEventListener('input', e => {
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openModal(); }
-  if (e.key === 'Escape') { exitLinkMode(); closeModal(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'p') { e.preventDefault(); openPaperSearch(); }
+  if (e.key === 'Escape') { exitLinkMode(); closeModal(); closePaperSearch(); }
   if (e.key === 'l' || e.key === 'L') { if (selectedNode) enterLinkMode(); }
   if (e.key === 'f' || e.key === 'F') fitView();
   if (e.key === '+' || e.key === '=') { camZoom = Math.min(camZoom*1.15, 4); draw(); }
@@ -1334,6 +1930,7 @@ document.addEventListener('keydown', e => {
 
 // Canvas mouse
 canvas.addEventListener('mousedown', e => {
+  hideTooltip();
   const hit = hitNode(e.clientX - canvas.getBoundingClientRect().left, e.clientY - canvas.getBoundingClientRect().top);
   const cx = e.clientX - canvas.getBoundingClientRect().left;
   const cy = e.clientY - canvas.getBoundingClientRect().top;
@@ -1342,9 +1939,10 @@ canvas.addEventListener('mousedown', e => {
     if (hit && linkSourceNode && hit.id !== linkSourceNode.id) {
       const exists = edges.find(ed=>(ed.source===linkSourceNode.id&&ed.target===hit.id)||(ed.source===hit.id&&ed.target===linkSourceNode.id));
       if (!exists) {
-        edges.push({id:'e'+Date.now(), source:linkSourceNode.id, target:hit.id, type: prereqLinkMode ? 'prerequisite' : 'related'});
+        const edgeType = prereqLinkMode ? 'prerequisite' : improvesLinkMode ? 'improves' : 'related';
+        edges.push({id:'e'+Date.now(), source:linkSourceNode.id, target:hit.id, type: edgeType});
         saveData();
-        toast(prereqLinkMode ? 'Prerequisite link created' : 'Linked!');
+        toast(prereqLinkMode ? 'Prerequisite link created' : improvesLinkMode ? 'Improves-upon link created' : 'Linked!');
       } else toast('Already linked');
       openDetailPanel(linkSourceNode);
       updateSidebar();
@@ -1390,8 +1988,23 @@ canvas.addEventListener('mousemove', e => {
     draw();
   } else if (linkMode) {
     draw();
+  } else {
+    // Hover detection for tooltip + hover ring
+    const hit = hitNode(cx, cy);
+    const prevHovered = hoveredNode;
+    if (hit && hit.id !== selectedNode?.id) {
+      hoveredNode = hit;
+      showTooltip(hit, e.clientX, e.clientY);
+    } else {
+      if (hit && hit.id === selectedNode?.id) showTooltip(hit, e.clientX, e.clientY);
+      else hideTooltip();
+    }
+    // Redraw only when hover state changes (to show/hide the hover ring)
+    if (prevHovered?.id !== hoveredNode?.id) draw();
   }
 });
+
+canvas.addEventListener('mouseleave', () => { hideTooltip(); draw(); });
 
 canvas.addEventListener('mouseup', e => {
   if (isDraggingNode) { saveData(); }
@@ -1433,6 +2046,7 @@ document.getElementById('tb-zoom-in').onclick = () => { camZoom = Math.min(camZo
 document.getElementById('tb-zoom-out').onclick = () => { camZoom = Math.max(camZoom/1.2,0.15); draw(); };
 document.getElementById('tb-layout').onclick = autoLayout;
 document.getElementById('tb-export').onclick = exportJSON;
+document.getElementById('tb-paper-search').onclick = openPaperSearch;
 document.getElementById('tb-drive').onclick = onDriveButtonClick;
 document.getElementById('tb-drive').oncontextmenu = onDriveButtonRightClick;
 
@@ -1450,13 +2064,49 @@ document.getElementById('detail-close').onclick = () => {
   draw();
 };
 document.getElementById('detail-link-btn').onclick = () => {
-  if (selectedNode) { prereqLinkMode = false; enterLinkMode(selectedNode); }
+  if (selectedNode) { prereqLinkMode = false; improvesLinkMode = false; enterLinkMode(selectedNode); }
 };
 document.getElementById('detail-prereq-btn').onclick = () => {
-  if (selectedNode) { prereqLinkMode = true; enterLinkMode(selectedNode); toast('Click a node — will be marked as prerequisite'); }
+  if (selectedNode) { prereqLinkMode = true; improvesLinkMode = false; enterLinkMode(selectedNode); toast('Click a node — will be marked as prerequisite'); }
+};
+document.getElementById('detail-improves-btn').onclick = () => {
+  if (selectedNode) { improvesLinkMode = true; prereqLinkMode = false; enterLinkMode(selectedNode); toast('Click the base paper — this node improves upon it'); }
 };
 document.getElementById('detail-edit-btn').onclick = () => { if (selectedNode) openModal(null, selectedNode.id); };
 document.getElementById('detail-delete-btn').onclick = () => { if (selectedNode && confirm(`Delete "${selectedNode.title}"?`)) deleteNode(selectedNode.id); };
+
+// View tabs
+document.querySelectorAll('.view-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    sidebarView = tab.dataset.view;
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === sidebarView));
+    updateSidebar();
+  });
+});
+
+// Paper search modal
+document.getElementById('ps-close').onclick = closePaperSearch;
+document.getElementById('paper-search-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closePaperSearch();
+});
+document.getElementById('ps-input').addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closePaperSearch(); return; }
+  if (e.key === 'Enter') { clearTimeout(psSearchTimer); triggerPaperSearch(); }
+});
+document.getElementById('ps-input').addEventListener('input', () => {
+  clearTimeout(psSearchTimer);
+  const q = document.getElementById('ps-input').value.trim();
+  if (q.length < 2) return;
+  psSearchTimer = setTimeout(triggerPaperSearch, 600);
+});
+
+// arXiv fetch button + auto-trigger on resources input
+document.getElementById('arxiv-fetch-btn').onclick = scheduleArxivFetch;
+document.getElementById('form-resources').addEventListener('input', () => {
+  // Auto-detect arXiv URL and trigger fetch
+  const val = document.getElementById('form-resources').value;
+  if (extractArxivId(val)) scheduleArxivFetch();
+});
 
 // Status filter pills
 document.querySelectorAll('.sf-pill').forEach(pill => {
