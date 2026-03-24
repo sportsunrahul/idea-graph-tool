@@ -41,10 +41,32 @@
   #canvas-area { flex: 1; position: relative; overflow: hidden; }
 
   /* ── Sidebar ── */
-  #sidebar-header { padding: 20px 18px 14px; border-bottom: 1px solid var(--border); }
+  #sidebar-header { padding: 14px 18px 12px; border-bottom: 1px solid var(--border); }
+  .logo-row { display: flex; align-items: baseline; gap: 8px; }
   .logo { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
   .logo span { color: var(--accent2); }
+  .version-badge { font-size: 9px; color: var(--text3); font-family: 'JetBrains Mono', monospace; background: var(--surface2); border: 1px solid var(--border2); border-radius: 3px; padding: 1px 5px; }
   .node-count { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── Graph Selector ── */
+  #graph-selector { position: relative; margin-top: 10px; }
+  #graph-selector-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 6px 10px; cursor: pointer; font-size: 12px; font-family: 'Syne', sans-serif; color: var(--text); transition: border-color 0.15s; }
+  #graph-selector-btn:hover { border-color: var(--accent); }
+  #graph-selector-btn .gs-chevron { color: var(--text3); font-size: 10px; }
+  #graph-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-sm); box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 100; display: none; overflow: hidden; }
+  #graph-dropdown.open { display: block; }
+  .gd-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; cursor: pointer; font-size: 12px; transition: background 0.1s; }
+  .gd-item:hover { background: var(--surface2); }
+  .gd-item.active { color: var(--accent2); }
+  .gd-item.active .gd-name::before { content: '● '; font-size: 8px; }
+  .gd-del { color: var(--text3); font-size: 10px; padding: 2px 4px; border-radius: 3px; }
+  .gd-del:hover { color: #ff6b6b; background: rgba(255,107,107,0.15); }
+  .gd-rename { color: var(--text3); font-size: 10px; padding: 2px 4px; border-radius: 3px; margin-right: 2px; }
+  .gd-rename:hover { color: var(--accent2); background: var(--accent-glow); }
+  .gd-actions { display: flex; gap: 2px; }
+  .gd-sep { height: 1px; background: var(--border); margin: 2px 0; }
+  .gd-new { padding: 8px 10px; cursor: pointer; font-size: 12px; color: var(--accent2); transition: background 0.1s; }
+  .gd-new:hover { background: var(--surface2); }
 
   #quick-add { padding: 14px 14px 10px; border-bottom: 1px solid var(--border); }
   #quick-input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 13px; color: var(--text); font-family: 'Syne', sans-serif; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
@@ -256,8 +278,18 @@
   <!-- Sidebar -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <div class="logo">Idea<span>Graph</span></div>
+      <div class="logo-row">
+        <div class="logo">Idea<span>Graph</span></div>
+        <span class="version-badge" id="version-badge"></span>
+      </div>
       <div class="node-count" id="node-count-label">0 nodes · 0 edges</div>
+      <div id="graph-selector">
+        <div id="graph-selector-btn" onclick="toggleGraphDropdown()">
+          <span id="graph-name">Default</span>
+          <span class="gs-chevron">▾</span>
+        </div>
+        <div id="graph-dropdown"></div>
+      </div>
     </div>
 
     <div id="study-next-card">
@@ -466,6 +498,10 @@ function tagToColor(tag) {
   return opts[h % opts.length];
 }
 
+const VERSION = '1.2.0';
+const GRAPHS_KEY = 'ideagraph_graphs';
+const ACTIVE_KEY = 'ideagraph_active';
+
 const ARXIV_CAT_TAGS = {
   'cs.CV': 'computer-vision', 'cs.LG': 'machine-learning', 'cs.AI': 'ai',
   'cs.NE': 'neural-networks', 'cs.RO': 'robotics', 'cs.CL': 'nlp',
@@ -477,6 +513,9 @@ const STATUS_OPTIONS = [
   { id: 'in-progress', label: 'In Progress',   color: '#f0a830', icon: '◑' },
   { id: 'done',        label: 'Done',          color: '#5ecb8c', icon: '●' },
 ];
+
+let currentGraphId = 'default';
+let graphs = []; // [{id, name, createdAt}]
 
 let nodes = [];
 let edges = [];
@@ -1023,8 +1062,24 @@ function updateStudyNextCard() {
 }
 
 // ── Persistence ────────────────────────────────────────────────────────
+function graphDataKey(id) { return id === 'default' ? 'ideagraph_v1' : `ideagraph_v1_${id}`; }
+
+function saveGraphList() {
+  try { localStorage.setItem(GRAPHS_KEY, JSON.stringify(graphs)); } catch(e) {}
+}
+
+function loadGraphList() {
+  try {
+    const raw = localStorage.getItem(GRAPHS_KEY);
+    if (raw) { graphs = JSON.parse(raw); return; }
+  } catch(e) {}
+  // First run: bootstrap with a default graph
+  graphs = [{ id: 'default', name: 'My Graph', createdAt: Date.now() }];
+  saveGraphList();
+}
+
 function saveData() {
-  try { localStorage.setItem('ideagraph_v1', JSON.stringify({ nodes, edges, nextId })); } catch(e) {}
+  try { localStorage.setItem(graphDataKey(currentGraphId), JSON.stringify({ nodes, edges, nextId })); } catch(e) {}
   scheduleDriveSync();
 }
 // ── Migration — applied on every load so old data is always upgraded ───
@@ -1050,7 +1105,7 @@ function migrateData(d) {
 
 function loadData() {
   try {
-    const raw = localStorage.getItem('ideagraph_v1');
+    const raw = localStorage.getItem(graphDataKey(currentGraphId));
     if (raw) {
       const m = migrateData(JSON.parse(raw));
       nodes = m.nodes; edges = m.edges; nextId = m.nextId;
@@ -2099,9 +2154,99 @@ document.querySelectorAll('.sf-pill').forEach(pill => {
   });
 });
 
+// ── Graph management ──────────────────────────────────────────────────
+function updateGraphSelector() {
+  const g = graphs.find(g => g.id === currentGraphId) || graphs[0];
+  document.getElementById('graph-name').textContent = g ? g.name : 'My Graph';
+}
+
+function renderGraphDropdown() {
+  const dd = document.getElementById('graph-dropdown');
+  dd.innerHTML = graphs.map(g => `
+    <div class="gd-item ${g.id === currentGraphId ? 'active' : ''}" onclick="switchGraph('${g.id}')">
+      <span class="gd-name">${g.name}</span>
+      <span class="gd-actions">
+        <span class="gd-rename" title="Rename" onclick="event.stopPropagation();promptRenameGraph('${g.id}')">✎</span>
+        ${graphs.length > 1 ? `<span class="gd-del" title="Delete" onclick="event.stopPropagation();deleteGraph('${g.id}')">✕</span>` : ''}
+      </span>
+    </div>`).join('')
+    + `<div class="gd-sep"></div><div class="gd-new" onclick="promptNewGraph()">+ New graph</div>`;
+}
+
+function toggleGraphDropdown() {
+  const dd = document.getElementById('graph-dropdown');
+  if (dd.classList.contains('open')) { dd.classList.remove('open'); return; }
+  renderGraphDropdown();
+  dd.classList.add('open');
+}
+
+window.switchGraph = function(id) {
+  if (id === currentGraphId) { document.getElementById('graph-dropdown').classList.remove('open'); return; }
+  saveData();
+  currentGraphId = id;
+  localStorage.setItem(ACTIVE_KEY, id);
+  selectedNode = null;
+  document.getElementById('detail-panel').classList.remove('open');
+  nodes = []; edges = []; nextId = 1;
+  if (!loadData()) { nodes = []; edges = []; nextId = 1; }
+  updateGraphSelector();
+  updateSidebar();
+  fitView();
+  draw();
+  document.getElementById('graph-dropdown').classList.remove('open');
+  document.title = `IdeaGraph — ${graphs.find(g=>g.id===id)?.name || id}`;
+};
+
+window.promptNewGraph = function() {
+  document.getElementById('graph-dropdown').classList.remove('open');
+  const name = prompt('Graph name:');
+  if (!name || !name.trim()) return;
+  const id = 'g' + Date.now();
+  graphs.push({ id, name: name.trim(), createdAt: Date.now() });
+  saveGraphList();
+  window.switchGraph(id);
+};
+
+window.promptRenameGraph = function(id) {
+  document.getElementById('graph-dropdown').classList.remove('open');
+  const g = graphs.find(x => x.id === id);
+  if (!g) return;
+  const name = prompt('Rename graph:', g.name);
+  if (!name || !name.trim()) return;
+  g.name = name.trim();
+  saveGraphList();
+  updateGraphSelector();
+  document.title = `IdeaGraph — ${g.name}`;
+};
+
+window.deleteGraph = function(id) {
+  if (graphs.length <= 1) { toast('Cannot delete last graph'); return; }
+  const g = graphs.find(x => x.id === id);
+  if (!confirm(`Delete "${g?.name}"? This cannot be undone.`)) return;
+  graphs = graphs.filter(x => x.id !== id);
+  saveGraphList();
+  try { localStorage.removeItem(graphDataKey(id)); } catch(e) {}
+  document.getElementById('graph-dropdown').classList.remove('open');
+  if (currentGraphId === id) window.switchGraph(graphs[0].id);
+  else renderGraphDropdown();
+};
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('graph-selector').contains(e.target)) {
+    document.getElementById('graph-dropdown').classList.remove('open');
+  }
+});
+
 // ── Init ──────────────────────────────────────────────────────────────
 window.addEventListener('resize', () => { resizeCanvas(); draw(); });
 resizeCanvas();
+loadGraphList();
+currentGraphId = localStorage.getItem(ACTIVE_KEY) || 'default';
+if (!graphs.find(g => g.id === currentGraphId)) currentGraphId = graphs[0].id;
+document.getElementById('version-badge').textContent = 'v' + VERSION;
+updateGraphSelector();
+document.title = `IdeaGraph — ${graphs.find(g=>g.id===currentGraphId)?.name || 'My Graph'}`;
 if (!loadData()) seedData();
 updateSidebar();
 fitView();
