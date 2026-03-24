@@ -745,9 +745,9 @@ function extractArxivId(url) {
 }
 
 async function fetchArxivMetadata(arxivId) {
-  const url = `https://api.openalex.org/works?filter=ids.arxiv:${arxivId}&select=title,abstract_inverted_index,publication_year,topics`;
+  const url = `https://api.openalex.org/works?filter=ids.arxiv:${arxivId}&mailto=ideagraph@user.local`;
   const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
-  if (!resp.ok) throw new Error('arXiv fetch failed');
+  if (!resp.ok) throw new Error(`OpenAlex returned ${resp.status}`);
   const json = await resp.json();
   const paper = (json.results || [])[0];
   if (!paper) throw new Error('Paper not found in OpenAlex');
@@ -823,7 +823,7 @@ function reconstructAbstract(inv) {
 
 async function searchArxivPapers(query) {
   const q = encodeURIComponent(query.trim());
-  const url = `https://api.openalex.org/works?search=${q}&per_page=10&filter=type:article&select=title,abstract_inverted_index,publication_year,authorships,ids,topics,open_access`;
+  const url = `https://api.openalex.org/works?search=${q}&per_page=10&filter=type:article&mailto=ideagraph@user.local`;
   const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
   if (!resp.ok) throw new Error(`API error ${resp.status}`);
   const json = await resp.json();
