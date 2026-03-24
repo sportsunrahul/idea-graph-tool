@@ -757,19 +757,20 @@ function extractArxivId(url) {
 }
 
 async function fetchArxivMetadata(arxivId) {
-  const url = `https://export.arxiv.org/api/query?id_list=${arxivId}&max_results=1`;
-  const resp = await fetch(url);
+  const url = `https://api.openalex.org/works/https://arxiv.org/abs/${arxivId}?select=title,abstract_inverted_index,publication_year,topics`;
+  const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
   if (!resp.ok) throw new Error('arXiv fetch failed');
-  const xml = await resp.text();
-  const doc = new DOMParser().parseFromString(xml, 'text/xml');
-  const entry = doc.getElementsByTagName('entry')[0];
-  if (!entry) throw new Error('No entry found');
-  const title = entry.getElementsByTagName('title')[0]?.textContent?.trim().replace(/\s+/g, ' ');
-  const summary = entry.getElementsByTagName('summary')[0]?.textContent?.trim().replace(/\s+/g, ' ');
-  const published = entry.getElementsByTagName('published')[0]?.textContent;
-  const year = published ? parseInt(published.slice(0, 4)) : null;
-  const cats = [...entry.getElementsByTagName('category')].map(c => c.getAttribute('term'));
-  const tags = [...new Set(cats.map(c => ARXIV_CAT_TAGS[c]).filter(Boolean))];
+  const paper = await resp.json();
+  const title = paper.title || '';
+  const summary = reconstructAbstract(paper.abstract_inverted_index);
+  const year = paper.publication_year || null;
+  const fieldMap = {
+    'Computer Vision': 'computer-vision', 'Machine Learning': 'machine-learning',
+    'Artificial Intelligence': 'machine-learning', 'Natural Language Processing': 'nlp',
+    'Robotics': 'robotics', 'Pattern Recognition': 'computer-vision',
+    'Deep Learning': 'machine-learning', 'Image Processing': 'computer-vision',
+  };
+  const tags = [...new Set((paper.topics || []).map(t => fieldMap[t.display_name]).filter(Boolean))];
   return { title, abstract: summary ? summary.slice(0, 280) + (summary.length > 280 ? '…' : '') : '', year, tags };
 }
 
