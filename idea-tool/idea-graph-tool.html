@@ -151,6 +151,33 @@
   #drive-status.syncing { color: var(--amber); border-color: var(--amber); }
   #drive-status.synced  { color: var(--green); border-color: var(--green); }
   #drive-status.error   { color: var(--coral); border-color: var(--coral); }
+
+  /* ── Study tracking ── */
+  .status-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+  .status-opt { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border2); color: var(--text2); cursor: pointer; font-size: 11px; font-family: 'JetBrains Mono', monospace; transition: all 0.15s; }
+  .status-opt:hover { border-color: var(--accent); color: var(--text); }
+  .status-opt.selected { color: #fff; border-color: transparent; }
+
+  .mastery-picker { display: flex; gap: 5px; align-items: center; }
+  .mastery-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border2); cursor: pointer; transition: all 0.15s; }
+  .mastery-dot:hover { border-color: var(--accent2); transform: scale(1.1); }
+  .mastery-dot.filled { background: var(--accent); border-color: var(--accent); }
+  .mastery-val-label { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-left: 8px; min-width: 70px; }
+
+  .resource-link { display: block; font-size: 11px; color: var(--accent2); text-decoration: none; padding: 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.15s; }
+  .resource-link:hover { color: var(--text); text-decoration: underline; }
+
+  .detail-progress-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .status-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-family: 'JetBrains Mono', monospace; border: 1px solid; }
+  .mastery-dots-row { display: flex; gap: 4px; align-items: center; }
+  .mastery-pip { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--border2); }
+  .mastery-pip.filled { border-color: var(--accent); background: var(--accent); }
+  .mastery-pip-label { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-left: 6px; }
+
+  #status-filter-bar { padding: 6px 14px; border-bottom: 1px solid var(--border); display: flex; gap: 5px; }
+  .sf-pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; border: 1px solid var(--border2); color: var(--text2); cursor: pointer; transition: all 0.15s; font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+  .sf-pill:hover { border-color: var(--accent); color: var(--text); }
+  .sf-pill.active { color: #fff; border-color: transparent; }
 </style>
 <script>
   // Must be defined BEFORE the GIS script loads so the callback isn't missed
@@ -185,6 +212,12 @@
 
     <div id="tags-filter"></div>
 
+    <div id="status-filter-bar">
+      <div class="sf-pill" data-status="want">○ Want</div>
+      <div class="sf-pill" data-status="in-progress">◑ In Progress</div>
+      <div class="sf-pill" data-status="done">● Done</div>
+    </div>
+
     <div id="node-list"></div>
   </div>
 
@@ -214,6 +247,14 @@
         <div class="detail-label">Tags</div>
         <div class="detail-tags" id="detail-tags-list"></div>
       </div>
+      <div class="detail-section" id="ds-study">
+        <div class="detail-label">Progress</div>
+        <div id="detail-progress"></div>
+      </div>
+      <div class="detail-section" id="ds-resources" style="display:none">
+        <div class="detail-label">Resources</div>
+        <div id="detail-resources-list"></div>
+      </div>
       <div class="detail-section">
         <div class="detail-label">Connected ideas</div>
         <div class="connected-list" id="connected-list"></div>
@@ -225,6 +266,7 @@
     </div>
     <div id="detail-footer">
       <button class="detail-action" id="detail-link-btn">+ Link</button>
+      <button class="detail-action" id="detail-prereq-btn" title="Link as prerequisite">↳ Prereq</button>
       <button class="detail-action" id="detail-edit-btn">Edit</button>
       <button class="detail-action danger" id="detail-delete-btn">Delete</button>
     </div>
@@ -248,6 +290,18 @@
       <div class="form-row">
         <label class="form-label">COLOR</label>
         <div class="color-picker" id="color-picker"></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">STATUS</label>
+        <div class="status-picker" id="status-picker"></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">MASTERY LEVEL</label>
+        <div class="mastery-picker" id="mastery-picker"></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">RESOURCES (one URL per line)</label>
+        <textarea class="form-input" id="form-resources" placeholder="https://..." style="min-height:58px"></textarea>
       </div>
       <div class="form-actions">
         <button class="btn-cancel" id="modal-cancel">Cancel</button>
@@ -295,15 +349,26 @@ const COLOR_PALETTE = [
   { id:'gray',   fill:'rgba(120,125,140,0.20)', stroke:'#787d8c', text:'#aab0c0' },
 ];
 
+const STATUS_OPTIONS = [
+  { id: 'want',        label: 'Want to Study', color: '#787d8c', icon: '○' },
+  { id: 'in-progress', label: 'In Progress',   color: '#f0a830', icon: '◑' },
+  { id: 'done',        label: 'Done',          color: '#5ecb8c', icon: '●' },
+];
+const MASTERY_LABELS = ['None', 'Exposure', 'Familiar', 'Comfortable', 'Proficient', 'Expert'];
+
 let nodes = [];
 let edges = [];
 let nextId = 1;
 let selectedNode = null;
 let linkSourceNode = null;
 let linkMode = false;
+let prereqLinkMode = false; // when true, new edges get type:'prerequisite'
 let searchQuery = '';
 let activeTag = null;
+let activeStatus = null;
 let selectedColor = 'purple';
+let selectedStatus = 'want';
+let selectedMastery = 0;
 let editingNodeId = null;
 
 // Camera
@@ -320,25 +385,25 @@ const mmCtx = minimapCanvas.getContext('2d');
 // ── Seed data ──────────────────────────────────────────────────────────
 function seedData() {
   nodes = [
-    { id:1, title:'Systems thinking',    desc:'Holistic approach to analysis — how parts interrelate.', tags:['thinking','design'], color:'purple', x:0,   y:0,   createdAt:Date.now()-8e6 },
-    { id:2, title:'Second-order effects',desc:'Consequences of consequences. Rarely modeled directly.', tags:['thinking'],         color:'coral',  x:220, y:-80, createdAt:Date.now()-7e6 },
-    { id:3, title:'Feedback loops',      desc:'Circular causality: output influences input.',            tags:['thinking','systems'],color:'teal',   x:200, y:120, createdAt:Date.now()-6e6 },
-    { id:4, title:'Mental models',       desc:'Frameworks for understanding how the world works.',       tags:['thinking','learning'],color:'amber', x:-200,y:-60, createdAt:Date.now()-5e6 },
-    { id:5, title:'Information theory',  desc:'Quantifying uncertainty. Shannon entropy.',               tags:['math','cs'],        color:'green',  x:420, y:20,  createdAt:Date.now()-4e6 },
-    { id:6, title:'Emergence',           desc:'Complex behavior arising from simple rules.',             tags:['systems','biology'], color:'purple', x:-20, y:200, createdAt:Date.now()-3e6 },
-    { id:7, title:'Abstraction layers',  desc:'Hiding complexity behind clean interfaces.',              tags:['cs','design'],       color:'teal',   x:-240,y:120, createdAt:Date.now()-2e6 },
-    { id:8, title:'Causal inference',    desc:'Distinguishing correlation from causation.',              tags:['math','thinking'],   color:'amber',  x:400, y:-160,createdAt:Date.now()-1e6 },
+    { id:1, title:'Systems thinking',    desc:'Holistic approach to analysis — how parts interrelate.', tags:['thinking','design'],  color:'purple', status:'done',        mastery:4, resources:[], x:0,   y:0,   createdAt:Date.now()-8e6 },
+    { id:2, title:'Second-order effects',desc:'Consequences of consequences. Rarely modeled directly.', tags:['thinking'],           color:'coral',  status:'in-progress', mastery:2, resources:[], x:220, y:-80, createdAt:Date.now()-7e6 },
+    { id:3, title:'Feedback loops',      desc:'Circular causality: output influences input.',            tags:['thinking','systems'], color:'teal',   status:'done',        mastery:5, resources:[], x:200, y:120, createdAt:Date.now()-6e6 },
+    { id:4, title:'Mental models',       desc:'Frameworks for understanding how the world works.',       tags:['thinking','learning'],color:'amber',  status:'in-progress', mastery:3, resources:[], x:-200,y:-60, createdAt:Date.now()-5e6 },
+    { id:5, title:'Information theory',  desc:'Quantifying uncertainty. Shannon entropy.',               tags:['math','cs'],          color:'green',  status:'want',        mastery:1, resources:[], x:420, y:20,  createdAt:Date.now()-4e6 },
+    { id:6, title:'Emergence',           desc:'Complex behavior arising from simple rules.',             tags:['systems','biology'],  color:'purple', status:'want',        mastery:0, resources:[], x:-20, y:200, createdAt:Date.now()-3e6 },
+    { id:7, title:'Abstraction layers',  desc:'Hiding complexity behind clean interfaces.',              tags:['cs','design'],        color:'teal',   status:'done',        mastery:5, resources:[], x:-240,y:120, createdAt:Date.now()-2e6 },
+    { id:8, title:'Causal inference',    desc:'Distinguishing correlation from causation.',              tags:['math','thinking'],    color:'amber',  status:'want',        mastery:0, resources:[], x:400, y:-160,createdAt:Date.now()-1e6 },
   ];
   edges = [
-    {id:'e1', source:1, target:2},
-    {id:'e2', source:1, target:3},
-    {id:'e3', source:1, target:4},
-    {id:'e4', source:1, target:6},
-    {id:'e5', source:3, target:6},
-    {id:'e6', source:3, target:5},
-    {id:'e7', source:4, target:7},
-    {id:'e8', source:2, target:8},
-    {id:'e9', source:5, target:8},
+    {id:'e1', source:1, target:2, type:'related'},
+    {id:'e2', source:1, target:3, type:'prerequisite'},
+    {id:'e3', source:1, target:4, type:'related'},
+    {id:'e4', source:1, target:6, type:'prerequisite'},
+    {id:'e5', source:3, target:6, type:'related'},
+    {id:'e6', source:3, target:5, type:'prerequisite'},
+    {id:'e7', source:4, target:7, type:'related'},
+    {id:'e8', source:2, target:8, type:'related'},
+    {id:'e9', source:5, target:8, type:'prerequisite'},
   ];
   nextId = 9;
   saveData();
@@ -633,6 +698,7 @@ function drawEdges() {
     const b = nodes.find(n => n.id === e.target);
     if (!a || !b) return;
     const isHighlighted = selectedNode && (selectedNode.id === a.id || selectedNode.id === b.id);
+    const isPrereq = e.type === 'prerequisite';
     const ra = nodeRadius(a), rb = nodeRadius(b);
     const dx = b.x - a.x, dy = b.y - a.y;
     const dist = Math.sqrt(dx*dx + dy*dy) || 1;
@@ -643,19 +709,29 @@ function drawEdges() {
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
-    ctx.strokeStyle = isHighlighted ? 'rgba(123,110,246,0.6)' : 'rgba(255,255,255,0.1)';
-    ctx.lineWidth = isHighlighted ? 1.5 : 0.8;
+    if (isPrereq) {
+      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = isHighlighted ? 'rgba(62,207,176,0.7)' : 'rgba(62,207,176,0.25)';
+      ctx.lineWidth = isHighlighted ? 1.5 : 1;
+    } else {
+      ctx.setLineDash([]);
+      ctx.strokeStyle = isHighlighted ? 'rgba(123,110,246,0.6)' : 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = isHighlighted ? 1.5 : 0.8;
+    }
     ctx.stroke();
+    ctx.setLineDash([]);
 
-    if (isHighlighted) {
-      // Arrow
+    // Arrow: always on prereq edges, only on highlighted for related
+    if (isHighlighted || isPrereq) {
       const angle = Math.atan2(dy, dx);
       ctx.save();
       ctx.translate(x2, y2);
       ctx.rotate(angle);
       ctx.beginPath();
       ctx.moveTo(-6, -4); ctx.lineTo(0, 0); ctx.lineTo(-6, 4);
-      ctx.strokeStyle = 'rgba(123,110,246,0.8)';
+      ctx.strokeStyle = isPrereq
+        ? (isHighlighted ? 'rgba(62,207,176,0.9)' : 'rgba(62,207,176,0.4)')
+        : 'rgba(123,110,246,0.8)';
       ctx.lineWidth = 1.2;
       ctx.stroke();
       ctx.restore();
@@ -683,16 +759,31 @@ function drawNodes() {
       ctx.shadowBlur = 18 * camZoom;
     }
 
+    // Status-based stroke color
+    const statusOpt = STATUS_OPTIONS.find(s => s.id === (n.status || 'want')) || STATUS_OPTIONS[0];
+    const statusColor = statusOpt.color;
+
     // Circle
     ctx.beginPath();
     ctx.arc(n.x, n.y, r, 0, Math.PI*2);
     ctx.fillStyle = palette.fill;
     ctx.fill();
-    ctx.strokeStyle = isSelected ? palette.stroke : (isFiltered ? palette.stroke : 'rgba(255,255,255,0.15)');
-    ctx.lineWidth = isSelected ? 1.5 : 0.8;
+    ctx.strokeStyle = isSelected ? statusColor : (isFiltered ? statusColor + 'cc' : 'rgba(255,255,255,0.12)');
+    ctx.lineWidth = isSelected ? 2 : 1.2;
     ctx.stroke();
 
     ctx.shadowBlur = 0;
+
+    // Mastery arc (partial ring outside node)
+    const mastery = n.mastery || 0;
+    if (mastery > 0 && isFiltered) {
+      const arcEnd = -Math.PI/2 + (mastery / 5) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r + 5, -Math.PI/2, arcEnd);
+      ctx.strokeStyle = statusColor;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
 
     // Recency dot
     const age = Date.now() - n.createdAt;
@@ -790,6 +881,9 @@ function getFilteredNodes() {
   if (activeTag) {
     result = result.filter(n => n.tags.includes(activeTag));
   }
+  if (activeStatus) {
+    result = result.filter(n => (n.status || 'want') === activeStatus);
+  }
   return result;
 }
 
@@ -800,18 +894,25 @@ function updateSidebar() {
   list.innerHTML = '';
   [...filtered].sort((a,b) => b.createdAt - a.createdAt).forEach(n => {
     const pal = COLOR_PALETTE.find(c=>c.id===n.color)||COLOR_PALETTE[0];
+    const stOpt = STATUS_OPTIONS.find(s=>s.id===(n.status||'want'))||STATUS_OPTIONS[0];
     const div = document.createElement('div');
     div.className = 'node-item' + (selectedNode?.id === n.id ? ' selected' : '');
     div.innerHTML = `
-      <div class="node-item-title">${n.title}</div>
-      <div class="node-item-meta">${getEdgesFor(n.id).length} connections · ${timeAgo(n.createdAt)}</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="color:${stOpt.color};font-size:11px;flex-shrink:0">${stOpt.icon}</span>
+        <div class="node-item-title">${n.title}</div>
+      </div>
+      <div class="node-item-meta">${getEdgesFor(n.id).length} connections · ${timeAgo(n.createdAt)}${n.mastery ? ' · ' + MASTERY_LABELS[n.mastery] : ''}</div>
       ${n.tags.length ? `<div class="node-item-tags">${n.tags.map(t=>`<span class="node-tag" style="background:${pal.fill};color:${pal.text};border:1px solid ${pal.stroke}22">${t}</span>`).join('')}</div>` : ''}
     `;
     div.onclick = () => selectNode(n);
     list.appendChild(div);
   });
 
-  document.getElementById('node-count-label').textContent = `${nodes.length} nodes · ${edges.length} edges`;
+  const done = nodes.filter(n=>n.status==='done').length;
+  const inProg = nodes.filter(n=>n.status==='in-progress').length;
+  const statsStr = done || inProg ? ` · ${done}✓ ${inProg}◑` : '';
+  document.getElementById('node-count-label').textContent = `${nodes.length} nodes · ${edges.length} edges${statsStr}`;
 
   // Tags
   const allTags = [...new Set(nodes.flatMap(n=>n.tags))].sort();
@@ -854,6 +955,37 @@ function openDetailPanel(n) {
       `<span class="node-tag" style="padding:3px 10px;font-size:11px;background:${pal.fill};color:${pal.text};border:1px solid ${pal.stroke}44;border-radius:20px">${t}</span>`
     ).join('');
   } else dsTags.style.display = 'none';
+
+  // Progress (status + mastery)
+  const statusOpt = STATUS_OPTIONS.find(s => s.id === (n.status || 'want')) || STATUS_OPTIONS[0];
+  const masteryLabel = MASTERY_LABELS[n.mastery || 0];
+  const progressEl = document.getElementById('detail-progress');
+  const masteryPips = Array.from({length: 5}, (_, i) =>
+    `<span class="mastery-pip ${i < (n.mastery||0) ? 'filled' : ''}"></span>`
+  ).join('');
+  progressEl.innerHTML = `
+    <div class="detail-progress-row">
+      <span class="status-chip" style="color:${statusOpt.color};border-color:${statusOpt.color}44;background:${statusOpt.color}18">
+        ${statusOpt.icon} ${statusOpt.label}
+      </span>
+    </div>
+    <div class="mastery-dots-row">
+      ${masteryPips}
+      <span class="mastery-pip-label">${masteryLabel}</span>
+    </div>`;
+
+  // Resources
+  const dsRes = document.getElementById('ds-resources');
+  const resList = document.getElementById('detail-resources-list');
+  const resources = n.resources || [];
+  if (resources.length) {
+    dsRes.style.display = '';
+    resList.innerHTML = resources.map(url => {
+      let label = url;
+      try { label = new URL(url).hostname; } catch(_) {}
+      return `<a class="resource-link" href="${url}" target="_blank" rel="noopener" title="${url}">↗ ${label}</a>`;
+    }).join('');
+  } else dsRes.style.display = 'none';
 
   // Connected
   const connected = getConnected(n.id);
@@ -907,7 +1039,7 @@ window.selectAndFocus = function(id) {
 window.addEdgeAndRefresh = function(sid, tid) {
   const exists = edges.find(e=>(e.source===sid&&e.target===tid)||(e.source===tid&&e.target===sid));
   if (!exists) {
-    edges.push({ id:'e'+Date.now(), source:sid, target:tid });
+    edges.push({ id:'e'+Date.now(), source:sid, target:tid, type:'related' });
     saveData();
     toast('Link created');
   }
@@ -935,13 +1067,16 @@ function animateCam(tx, ty, tz) {
 }
 
 // ── Node CRUD ─────────────────────────────────────────────────────────
-function createNode(title, desc, tags, color, x, y) {
+function createNode(title, desc, tags, color, x, y, status, mastery, resources) {
   const n = {
     id: nextId++,
     title: title.trim(),
     desc: desc.trim(),
     tags: tags.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean),
     color: color || 'purple',
+    status: status || 'want',
+    mastery: mastery || 0,
+    resources: resources || [],
     x: x !== undefined ? x : (Math.random()-0.5)*400,
     y: y !== undefined ? y : (Math.random()-0.5)*300,
     createdAt: Date.now(),
@@ -976,16 +1111,24 @@ function openModal(prefillTitle, editId) {
   document.getElementById('form-title').value = prefillTitle || '';
   document.getElementById('form-desc').value = '';
   document.getElementById('form-tags').value = '';
+  document.getElementById('form-resources').value = '';
+  selectedStatus = 'want';
+  selectedMastery = 0;
   if (editId) {
     const n = nodes.find(x=>x.id===editId);
     if (n) {
       document.getElementById('form-title').value = n.title;
       document.getElementById('form-desc').value = n.desc||'';
       document.getElementById('form-tags').value = n.tags.join(', ');
+      document.getElementById('form-resources').value = (n.resources||[]).join('\n');
       selectedColor = n.color;
+      selectedStatus = n.status || 'want';
+      selectedMastery = n.mastery || 0;
     }
   }
   renderColorPicker();
+  renderStatusPicker();
+  renderMasteryPicker();
   setTimeout(()=>document.getElementById('form-title').focus(), 50);
 }
 
@@ -1004,24 +1147,54 @@ function renderColorPicker() {
 
 window.setColor = function(id) { selectedColor = id; renderColorPicker(); };
 
+function renderStatusPicker() {
+  const sp = document.getElementById('status-picker');
+  sp.innerHTML = STATUS_OPTIONS.map(s =>
+    `<div class="status-opt ${selectedStatus===s.id?'selected':''}"
+      style="${selectedStatus===s.id?`background:${s.color};border-color:${s.color}`:''}"
+      onclick="setStatus('${s.id}')">${s.icon} ${s.label}</div>`
+  ).join('');
+}
+window.setStatus = function(id) { selectedStatus = id; renderStatusPicker(); };
+
+function renderMasteryPicker() {
+  const mp = document.getElementById('mastery-picker');
+  const dots = Array.from({length: 5}, (_, i) =>
+    `<div class="mastery-dot ${i < selectedMastery ? 'filled' : ''}"
+      title="${MASTERY_LABELS[i+1]}"
+      onclick="setMastery(${i+1})"></div>`
+  ).join('');
+  mp.innerHTML = dots + `<span class="mastery-val-label">${MASTERY_LABELS[selectedMastery]}</span>`;
+}
+window.setMastery = function(val) {
+  selectedMastery = selectedMastery === val ? val - 1 : val;
+  if (selectedMastery < 0) selectedMastery = 0;
+  renderMasteryPicker();
+};
+
 function saveModal() {
   const title = document.getElementById('form-title').value.trim();
   if (!title) { document.getElementById('form-title').focus(); return; }
   const desc = document.getElementById('form-desc').value;
   const tags = document.getElementById('form-tags').value;
+  const resources = document.getElementById('form-resources').value
+    .split('\n').map(s=>s.trim()).filter(Boolean);
   if (editingNodeId) {
     const n = nodes.find(x=>x.id===editingNodeId);
     if (n) {
       n.title = title; n.desc = desc.trim();
       n.tags = tags.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);
       n.color = selectedColor;
+      n.status = selectedStatus;
+      n.mastery = selectedMastery;
+      n.resources = resources;
       saveData(); updateSidebar(); draw();
       if (selectedNode?.id === editingNodeId) openDetailPanel(n);
       toast('Node updated');
     }
   } else {
     const w = screenToWorld(canvas.width/2, canvas.height/2);
-    createNode(title, desc, tags, selectedColor, w.x + (Math.random()-0.5)*120, w.y + (Math.random()-0.5)*80);
+    createNode(title, desc, tags, selectedColor, w.x + (Math.random()-0.5)*120, w.y + (Math.random()-0.5)*80, selectedStatus, selectedMastery, resources);
     toast('Idea added');
   }
   closeModal();
@@ -1039,6 +1212,7 @@ function enterLinkMode(sourceNode) {
 function exitLinkMode() {
   linkMode = false;
   linkSourceNode = null;
+  prereqLinkMode = false;
   document.getElementById('tb-link').classList.remove('active');
   canvas.classList.remove('linking');
   document.getElementById('link-hint').classList.remove('show');
@@ -1167,11 +1341,15 @@ canvas.addEventListener('mousedown', e => {
   if (linkMode) {
     if (hit && linkSourceNode && hit.id !== linkSourceNode.id) {
       const exists = edges.find(ed=>(ed.source===linkSourceNode.id&&ed.target===hit.id)||(ed.source===hit.id&&ed.target===linkSourceNode.id));
-      if (!exists) { edges.push({id:'e'+Date.now(), source:linkSourceNode.id, target:hit.id}); saveData(); toast('Linked!'); }
-      else toast('Already linked');
+      if (!exists) {
+        edges.push({id:'e'+Date.now(), source:linkSourceNode.id, target:hit.id, type: prereqLinkMode ? 'prerequisite' : 'related'});
+        saveData();
+        toast(prereqLinkMode ? 'Prerequisite link created' : 'Linked!');
+      } else toast('Already linked');
       openDetailPanel(linkSourceNode);
       updateSidebar();
     }
+    prereqLinkMode = false;
     exitLinkMode();
     draw();
     return;
@@ -1271,9 +1449,36 @@ document.getElementById('detail-close').onclick = () => {
   updateSidebar();
   draw();
 };
-document.getElementById('detail-link-btn').onclick = () => { if (selectedNode) enterLinkMode(selectedNode); };
+document.getElementById('detail-link-btn').onclick = () => {
+  if (selectedNode) { prereqLinkMode = false; enterLinkMode(selectedNode); }
+};
+document.getElementById('detail-prereq-btn').onclick = () => {
+  if (selectedNode) { prereqLinkMode = true; enterLinkMode(selectedNode); toast('Click a node — will be marked as prerequisite'); }
+};
 document.getElementById('detail-edit-btn').onclick = () => { if (selectedNode) openModal(null, selectedNode.id); };
 document.getElementById('detail-delete-btn').onclick = () => { if (selectedNode && confirm(`Delete "${selectedNode.title}"?`)) deleteNode(selectedNode.id); };
+
+// Status filter pills
+document.querySelectorAll('.sf-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    const status = pill.dataset.status;
+    if (activeStatus === status) {
+      activeStatus = null;
+      document.querySelectorAll('.sf-pill').forEach(p => p.classList.remove('active'));
+    } else {
+      activeStatus = status;
+      document.querySelectorAll('.sf-pill').forEach(p => {
+        const active = p.dataset.status === status;
+        p.classList.toggle('active', active);
+        const stOpt = STATUS_OPTIONS.find(s=>s.id===p.dataset.status);
+        if (active && stOpt) { p.style.background = stOpt.color; p.style.borderColor = stOpt.color; }
+        else { p.style.background = ''; p.style.borderColor = ''; }
+      });
+    }
+    if (!activeStatus) document.querySelectorAll('.sf-pill').forEach(p => { p.style.background=''; p.style.borderColor=''; });
+    updateSidebar(); draw();
+  });
+});
 
 // ── Init ──────────────────────────────────────────────────────────────
 window.addEventListener('resize', () => { resizeCanvas(); draw(); });
