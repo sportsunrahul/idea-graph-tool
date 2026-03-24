@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IdeaGraph — Personal Knowledge Graph</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --surface2: #1e2026;
+    --surface3: #262830;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f0f0;
+    --text2: #9a9ba3;
+    --text3: #5a5c66;
+    --accent: #7b6ef6;
+    --accent2: #9d8ff8;
+    --accent-glow: rgba(123, 110, 246, 0.2);
+    --teal: #3ecfb0;
+    --teal-dim: rgba(62, 207, 176, 0.15);
+    --amber: #f0a830;
+    --amber-dim: rgba(240, 168, 48, 0.15);
+    --coral: #f06060;
+    --coral-dim: rgba(240, 96, 96, 0.15);
+    --green: #5ecb8c;
+    --green-dim: rgba(94, 203, 140, 0.15);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; }
+
+  /* ── Layout ── */
+  #app { display: flex; width: 100vw; height: 100vh; }
+  #sidebar { width: 280px; min-width: 280px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
+  #canvas-area { flex: 1; position: relative; overflow: hidden; }
+
+  /* ── Sidebar ── */
+  #sidebar-header { padding: 20px 18px 14px; border-bottom: 1px solid var(--border); }
+  .logo { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  .logo span { color: var(--accent2); }
+  .node-count { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+
+  #quick-add { padding: 14px 14px 10px; border-bottom: 1px solid var(--border); }
+  #quick-input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 13px; color: var(--text); font-family: 'Syne', sans-serif; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+  #quick-input::placeholder { color: var(--text3); }
+  #quick-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .add-hint { font-size: 10px; color: var(--text3); margin-top: 5px; font-family: 'JetBrains Mono', monospace; }
+
+  #search-wrap { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  #search-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px 6px 28px; font-size: 12px; color: var(--text); font-family: 'Syne', sans-serif; outline: none; transition: border-color 0.2s; }
+  #search-input::placeholder { color: var(--text3); }
+  #search-input:focus { border-color: var(--accent); }
+  .search-wrap-inner { position: relative; }
+  .search-icon { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 11px; pointer-events: none; }
+
+  #tags-filter { padding: 8px 14px; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag-pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; border: 1px solid var(--border2); color: var(--text2); cursor: pointer; transition: all 0.15s; font-family: 'JetBrains Mono', monospace; }
+  .tag-pill:hover { border-color: var(--accent); color: var(--accent2); }
+  .tag-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  #node-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+  #node-list::-webkit-scrollbar { width: 4px; }
+  #node-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .node-item { padding: 8px 14px; cursor: pointer; transition: background 0.15s; border-left: 2px solid transparent; }
+  .node-item:hover { background: var(--surface2); }
+  .node-item.selected { background: var(--surface2); border-left-color: var(--accent); }
+  .node-item-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .node-item-meta { font-size: 10px; color: var(--text3); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+  .node-item-tags { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+  .node-tag { font-size: 9px; padding: 1px 6px; border-radius: 10px; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── Canvas ── */
+  #graph-canvas { width: 100%; height: 100%; cursor: grab; }
+  #graph-canvas.dragging { cursor: grabbing; }
+  #graph-canvas.linking { cursor: crosshair; }
+
+  /* ── Toolbar ── */
+  #toolbar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border2); border-radius: 28px; padding: 6px; display: flex; gap: 2px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); z-index: 20; }
+  .tb-btn { width: 36px; height: 36px; border: none; background: transparent; border-radius: 20px; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--text2); transition: all 0.15s; }
+  .tb-btn:hover { background: var(--surface2); color: var(--text); }
+  .tb-btn.active { background: var(--accent); color: #fff; }
+  .tb-sep { width: 1px; background: var(--border); margin: 4px 2px; }
+
+  /* ── Detail Panel ── */
+  #detail-panel { position: absolute; right: 0; top: 0; width: 300px; height: 100%; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); z-index: 15; }
+  #detail-panel.open { transform: translateX(0); }
+  #detail-header { padding: 16px 16px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 10px; }
+  #detail-title-wrap { flex: 1; }
+  #detail-title { font-size: 15px; font-weight: 600; line-height: 1.3; }
+  #detail-close { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; padding: 2px; margin-top: -2px; }
+  #detail-close:hover { color: var(--text); }
+  #detail-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+  #detail-body::-webkit-scrollbar { width: 4px; }
+  #detail-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .detail-section { margin-bottom: 16px; }
+  .detail-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; font-family: 'JetBrains Mono', monospace; }
+  .detail-desc { font-size: 12px; color: var(--text2); line-height: 1.6; }
+  .detail-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .connected-list { display: flex; flex-direction: column; gap: 4px; }
+  .connected-item { font-size: 12px; padding: 6px 10px; background: var(--surface2); border-radius: var(--radius-sm); cursor: pointer; color: var(--text2); display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
+  .connected-item:hover { background: var(--surface3); color: var(--text); }
+  .conn-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  #detail-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+  .detail-action { flex: 1; padding: 7px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); font-size: 11px; cursor: pointer; color: var(--text2); font-family: 'Syne', sans-serif; text-align: center; transition: all 0.15s; }
+  .detail-action:hover { border-color: var(--accent); color: var(--accent2); }
+  .detail-action.danger:hover { border-color: var(--coral); color: var(--coral); }
+
+  /* ── Node creation modal ── */
+  #create-modal { position: absolute; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  #create-modal.open { opacity: 1; pointer-events: all; }
+  #create-form { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; width: 440px; max-width: 90vw; padding: 22px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .form-row { margin-bottom: 14px; }
+  .form-label { font-size: 11px; color: var(--text3); margin-bottom: 5px; display: block; font-family: 'JetBrains Mono', monospace; }
+  .form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 13px; color: var(--text); font-family: 'Syne', sans-serif; outline: none; transition: border-color 0.2s; }
+  .form-input:focus { border-color: var(--accent); }
+  textarea.form-input { resize: vertical; min-height: 70px; }
+  .color-picker { display: flex; gap: 8px; }
+  .color-opt { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s, transform 0.15s; }
+  .color-opt:hover { transform: scale(1.1); }
+  .color-opt.selected { border-color: #fff; }
+  .form-actions { display: flex; gap: 8px; margin-top: 18px; }
+  .btn-primary { flex: 1; padding: 9px; background: var(--accent); border: none; border-radius: var(--radius-sm); color: #fff; font-size: 13px; font-family: 'Syne', sans-serif; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-cancel { padding: 9px 16px; background: none; border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text2); font-size: 13px; font-family: 'Syne', sans-serif; cursor: pointer; transition: border-color 0.15s; }
+  .btn-cancel:hover { border-color: var(--border2); color: var(--text); }
+
+  /* ── Toast ── */
+  #toast { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface); border: 1px solid var(--border2); border-radius: 20px; padding: 7px 14px; font-size: 12px; color: var(--text2); opacity: 0; transition: all 0.25s; pointer-events: none; white-space: nowrap; z-index: 100; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Zoom indicator ── */
+  #zoom-indicator { position: absolute; top: 16px; right: 16px; font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 3px 7px; z-index: 20; }
+
+  /* ── Link mode hint ── */
+  #link-hint { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; border-radius: 20px; padding: 5px 14px; font-size: 11px; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 25; font-family: 'JetBrains Mono', monospace; }
+  #link-hint.show { opacity: 1; }
+
+  /* ── Minimap ── */
+  #minimap { position: absolute; bottom: 70px; right: 16px; width: 120px; height: 80px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; z-index: 20; opacity: 0.7; }
+  #minimap canvas { width: 100%; height: 100%; }
+  /* ── Drive sync status ── */
+  #drive-status { position: absolute; top: 16px; left: 16px; font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 3px 7px; z-index: 20; display: none; }
+  #drive-status.visible { display: block; }
+  #drive-status.syncing { color: var(--amber); border-color: var(--amber); }
+  #drive-status.synced  { color: var(--green); border-color: var(--green); }
+  #drive-status.error   { color: var(--coral); border-color: var(--coral); }
+</style>
+<script>
+  // Must be defined BEFORE the GIS script loads so the callback isn't missed
+  window.onGoogleLibraryLoad = function() {
+    window._gsiLoaded = true;
+    if (window._gsiReadyCallback) window._gsiReadyCallback();
+  };
+</script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+<body>
+<div id="app">
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <div class="logo">Idea<span>Graph</span></div>
+      <div class="node-count" id="node-count-label">0 nodes · 0 edges</div>
+    </div>
+
+    <div id="quick-add">
+      <input type="text" id="quick-input" placeholder="Quick add idea… (Enter)" maxlength="60" />
+      <div class="add-hint">⌘K → full editor · Esc → cancel</div>
+    </div>
+
+    <div id="search-wrap">
+      <div class="search-wrap-inner">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="search-input" placeholder="Search nodes…" />
+      </div>
+    </div>
+
+    <div id="tags-filter"></div>
+
+    <div id="node-list"></div>
+  </div>
+
+  <!-- Canvas -->
+  <div id="canvas-area">
+    <canvas id="graph-canvas"></canvas>
+    <div id="zoom-indicator">100%</div>
+    <div id="drive-status"></div>
+    <div id="link-hint">Click a node to link → Esc to cancel</div>
+    <div id="minimap"><canvas id="minimap-canvas"></canvas></div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div id="detail-panel">
+    <div id="detail-header">
+      <div id="detail-title-wrap">
+        <div id="detail-title"></div>
+      </div>
+      <button id="detail-close">✕</button>
+    </div>
+    <div id="detail-body">
+      <div class="detail-section" id="ds-desc" style="display:none">
+        <div class="detail-label">Description</div>
+        <div class="detail-desc" id="detail-desc-text"></div>
+      </div>
+      <div class="detail-section" id="ds-tags" style="display:none">
+        <div class="detail-label">Tags</div>
+        <div class="detail-tags" id="detail-tags-list"></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label">Connected ideas</div>
+        <div class="connected-list" id="connected-list"></div>
+      </div>
+      <div class="detail-section" id="ds-suggest">
+        <div class="detail-label">Suggested links</div>
+        <div class="connected-list" id="suggested-list"></div>
+      </div>
+    </div>
+    <div id="detail-footer">
+      <button class="detail-action" id="detail-link-btn">+ Link</button>
+      <button class="detail-action" id="detail-edit-btn">Edit</button>
+      <button class="detail-action danger" id="detail-delete-btn">Delete</button>
+    </div>
+  </div>
+
+  <!-- Create Modal -->
+  <div id="create-modal">
+    <div id="create-form">
+      <div class="form-row">
+        <label class="form-label">TITLE *</label>
+        <input class="form-input" id="form-title" type="text" placeholder="Name this idea…" maxlength="60" />
+      </div>
+      <div class="form-row">
+        <label class="form-label">DESCRIPTION</label>
+        <textarea class="form-input" id="form-desc" placeholder="Describe it… (optional)"></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-label">TAGS (comma separated)</label>
+        <input class="form-input" id="form-tags" type="text" placeholder="design, research, todo" />
+      </div>
+      <div class="form-row">
+        <label class="form-label">COLOR</label>
+        <div class="color-picker" id="color-picker"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-cancel" id="modal-cancel">Cancel</button>
+        <button class="btn-primary" id="modal-save">Add idea →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div id="toolbar">
+    <button class="tb-btn" id="tb-add" title="Add node (⌘K)">＋</button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="tb-link" title="Link mode (L)">⟶</button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="tb-fit" title="Fit view (F)">⊡</button>
+    <button class="tb-btn" id="tb-zoom-in" title="Zoom in (+)">+</button>
+    <button class="tb-btn" id="tb-zoom-out" title="Zoom out (-)">−</button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="tb-layout" title="Auto layout">⊕</button>
+    <button class="tb-btn" id="tb-export" title="Export JSON">↓</button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="tb-drive" title="Connect Google Drive">☁</button>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+// ── Google Drive Config ────────────────────────────────────────────────
+// 1. Go to https://console.cloud.google.com
+// 2. Create a project → Enable "Google Drive API"
+// 3. APIs & Services → Credentials → Create OAuth 2.0 Client ID (Web application)
+// 4. Add your file's origin to "Authorized JavaScript origins"
+//    e.g. "null" for local file:// or "http://localhost:PORT" for a server
+// 5. Paste the Client ID below:
+const GD_CLIENT_ID = '508226065592-8tcg804cggiridu0om74i9rinnhjs75o.apps.googleusercontent.com';  // <── PASTE YOUR CLIENT ID HERE
+
+// ── State ──────────────────────────────────────────────────────────────
+const COLOR_PALETTE = [
+  { id:'purple', fill:'rgba(123,110,246,0.25)', stroke:'#7b6ef6', text:'#c4b8fb' },
+  { id:'teal',   fill:'rgba(62,207,176,0.20)',  stroke:'#3ecfb0', text:'#7eecd8' },
+  { id:'amber',  fill:'rgba(240,168,48,0.20)',  stroke:'#f0a830', text:'#f5c878' },
+  { id:'coral',  fill:'rgba(240,96,96,0.20)',   stroke:'#f06060', text:'#f59595' },
+  { id:'green',  fill:'rgba(94,203,140,0.20)',  stroke:'#5ecb8c', text:'#8fdfb0' },
+  { id:'gray',   fill:'rgba(120,125,140,0.20)', stroke:'#787d8c', text:'#aab0c0' },
+];
+
+let nodes = [];
+let edges = [];
+let nextId = 1;
+let selectedNode = null;
+let linkSourceNode = null;
+let linkMode = false;
+let searchQuery = '';
+let activeTag = null;
+let selectedColor = 'purple';
+let editingNodeId = null;
+
+// Camera
+let camX = 0, camY = 0, camZoom = 1;
+let isDragging = false, dragStart = null, camStart = null;
+let isDraggingNode = false, dragNodeId = null, dragNodeStart = null;
+let lastMousePos = { x: 0, y: 0 };
+
+const canvas = document.getElementById('graph-canvas');
+const ctx = canvas.getContext('2d');
+const minimapCanvas = document.getElementById('minimap-canvas');
+const mmCtx = minimapCanvas.getContext('2d');
+
+// ── Seed data ──────────────────────────────────────────────────────────
+function seedData() {
+  nodes = [
+    { id:1, title:'Systems thinking',    desc:'Holistic approach to analysis — how parts interrelate.', tags:['thinking','design'], color:'purple', x:0,   y:0,   createdAt:Date.now()-8e6 },
+    { id:2, title:'Second-order effects',desc:'Consequences of consequences. Rarely modeled directly.', tags:['thinking'],         color:'coral',  x:220, y:-80, createdAt:Date.now()-7e6 },
+    { id:3, title:'Feedback loops',      desc:'Circular causality: output influences input.',            tags:['thinking','systems'],color:'teal',   x:200, y:120, createdAt:Date.now()-6e6 },
+    { id:4, title:'Mental models',       desc:'Frameworks for understanding how the world works.',       tags:['thinking','learning'],color:'amber', x:-200,y:-60, createdAt:Date.now()-5e6 },
+    { id:5, title:'Information theory',  desc:'Quantifying uncertainty. Shannon entropy.',               tags:['math','cs'],        color:'green',  x:420, y:20,  createdAt:Date.now()-4e6 },
+    { id:6, title:'Emergence',           desc:'Complex behavior arising from simple rules.',             tags:['systems','biology'], color:'purple', x:-20, y:200, createdAt:Date.now()-3e6 },
+    { id:7, title:'Abstraction layers',  desc:'Hiding complexity behind clean interfaces.',              tags:['cs','design'],       color:'teal',   x:-240,y:120, createdAt:Date.now()-2e6 },
+    { id:8, title:'Causal inference',    desc:'Distinguishing correlation from causation.',              tags:['math','thinking'],   color:'amber',  x:400, y:-160,createdAt:Date.now()-1e6 },
+  ];
+  edges = [
+    {id:'e1', source:1, target:2},
+    {id:'e2', source:1, target:3},
+    {id:'e3', source:1, target:4},
+    {id:'e4', source:1, target:6},
+    {id:'e5', source:3, target:6},
+    {id:'e6', source:3, target:5},
+    {id:'e7', source:4, target:7},
+    {id:'e8', source:2, target:8},
+    {id:'e9', source:5, target:8},
+  ];
+  nextId = 9;
+  saveData();
+}
+
+// ── Google Drive Sync ──────────────────────────────────────────────────
+const GD_FILE_NAME  = 'ideagraph_v1.json';
+const GD_SCOPE      = 'https://www.googleapis.com/auth/drive.file';
+const GD_API_FILES  = 'https://www.googleapis.com/drive/v3/files';
+const GD_API_UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
+
+let gdToken     = null;   // current access token
+let gdFileId    = null;   // cached Drive file ID
+let gdSyncTimer = null;
+let gdTokenClient = null;
+
+// Runs once GIS is confirmed loaded
+function initGoogleDrive() {
+  if (!GD_CLIENT_ID) return;
+  gdTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GD_CLIENT_ID,
+    scope: GD_SCOPE,
+    callback: async (resp) => {
+      if (resp.error) {
+        console.error('GIS token error:', resp);
+        toast('Drive sign-in failed: ' + (resp.error_description || resp.error));
+        return;
+      }
+      gdToken = resp.access_token;
+      localStorage.setItem('gd_connected', '1');
+      updateDriveUI();
+      toast('Connecting to Drive…');
+      await loadFromGDrive();
+    },
+  });
+  // Silently restore session if user was connected before
+  if (localStorage.getItem('gd_connected')) {
+    gdTokenClient.requestAccessToken({ prompt: '' });
+  }
+}
+
+// Drive button click handler
+function onDriveButtonClick() {
+  if (!GD_CLIENT_ID) {
+    alert(
+      'To enable Google Drive sync:\n\n' +
+      '1. Open this HTML file in a text editor\n' +
+      '2. Find the line:  const GD_CLIENT_ID = \'\'\n' +
+      '3. Paste your OAuth 2.0 Client ID between the quotes\n\n' +
+      'Get a Client ID at:\n' +
+      'console.cloud.google.com → APIs & Services → Credentials'
+    );
+    return;
+  }
+  if (location.protocol === 'file:') {
+    alert(
+      'Google Sign-In does not work when opening as a file://\n\n' +
+      'Serve it over HTTP instead:\n' +
+      '  cd idea-tool\n' +
+      '  python3 -m http.server 8080\n\n' +
+      'Then open: http://localhost:8080/idea-graph-tool.html\n\n' +
+      'Also make sure http://localhost:8080 is in your\n' +
+      'Google Cloud Console → Authorized JavaScript origins.'
+    );
+    return;
+  }
+  if (!gdTokenClient) {
+    toast('Google library not loaded yet — try again in a moment');
+    // Retry init in case GIS loaded after our check
+    if (window._gsiLoaded) initGoogleDrive();
+    return;
+  }
+  if (gdToken) {
+    // Already connected — manual sync
+    saveToGDrive(true);
+  } else {
+    gdTokenClient.requestAccessToken({ prompt: 'consent' });
+  }
+}
+
+// Right-click Drive button = disconnect
+function onDriveButtonRightClick(e) {
+  e.preventDefault();
+  if (!gdToken) return;
+  if (!confirm('Disconnect from Google Drive?')) return;
+  google.accounts.oauth2.revoke(gdToken, () => {});
+  gdToken = null; gdFileId = null;
+  localStorage.removeItem('gd_connected');
+  updateDriveUI();
+  toast('Disconnected from Drive');
+}
+
+// Fetch wrapper that attaches auth header and handles 401
+async function gdFetch(url, opts = {}) {
+  if (!gdToken) return null;
+  const resp = await fetch(url, {
+    ...opts,
+    headers: { ...opts.headers, Authorization: `Bearer ${gdToken}` },
+  });
+  if (resp.status === 401) {
+    gdToken = null;
+    localStorage.removeItem('gd_connected');
+    updateDriveUI();
+    toast('Drive session expired — click ☁ to reconnect');
+    return null;
+  }
+  return resp;
+}
+
+async function findOrCreateGDFile() {
+  if (gdFileId) return gdFileId;
+  const q = `name='${GD_FILE_NAME}' and trashed=false and mimeType='application/json'`;
+  const r = await gdFetch(`${GD_API_FILES}?q=${encodeURIComponent(q)}&fields=files(id)&spaces=drive`);
+  if (!r) return null;
+  const d = await r.json();
+  if (d.files && d.files.length > 0) { gdFileId = d.files[0].id; return gdFileId; }
+  // Create an empty file
+  const cr = await gdFetch(GD_API_FILES, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: GD_FILE_NAME, mimeType: 'application/json' }),
+  });
+  if (!cr || !cr.ok) return null;
+  const cd = await cr.json();
+  gdFileId = cd.id;
+  return gdFileId;
+}
+
+async function saveToGDrive(manual = false) {
+  if (!gdToken) return;
+  setDriveStatus('syncing', '☁ syncing…');
+  try {
+    const fileId = await findOrCreateGDFile();
+    if (!fileId) { setDriveStatus('error', '☁ error'); return; }
+    const body = JSON.stringify({ nodes, edges, nextId });
+    const r = await gdFetch(`${GD_API_UPLOAD}/${fileId}?uploadType=media`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+    if (r && r.ok) {
+      setDriveStatus('synced', '☁ synced');
+      if (manual) toast('Saved to Drive ☁');
+      setTimeout(() => setDriveStatus('', ''), 3000);
+    } else {
+      setDriveStatus('error', '☁ save failed');
+      if (manual) toast('Drive save failed');
+    }
+  } catch (e) {
+    console.error('Drive save:', e);
+    setDriveStatus('error', '☁ error');
+  }
+}
+
+async function loadFromGDrive() {
+  if (!gdToken) return;
+  setDriveStatus('syncing', '☁ loading…');
+  try {
+    const fileId = await findOrCreateGDFile();
+    if (!fileId) { setDriveStatus('error', '☁ error'); return; }
+    const r = await gdFetch(`${GD_API_FILES}/${fileId}?alt=media`);
+    if (!r || !r.ok) { setDriveStatus('error', '☁ load failed'); return; }
+    const text = await r.text();
+    if (!text || !text.trim().startsWith('{')) {
+      // New empty file — push current data to Drive
+      await saveToGDrive();
+      return;
+    }
+    const d = JSON.parse(text);
+    if (d && Array.isArray(d.nodes)) {
+      nodes = d.nodes;
+      edges = d.edges || [];
+      nextId = d.nextId || (Math.max(0, ...d.nodes.map(n => n.id)) + 1);
+      try { localStorage.setItem('ideagraph_v1', JSON.stringify({ nodes, edges, nextId })); } catch(_) {}
+      updateSidebar(); draw(); fitView();
+      toast('Loaded from Drive ☁');
+    }
+    setDriveStatus('synced', '☁ synced');
+    setTimeout(() => setDriveStatus('', ''), 3000);
+  } catch (e) {
+    console.error('Drive load:', e);
+    setDriveStatus('error', '☁ load error');
+  }
+}
+
+function scheduleDriveSync() {
+  if (!gdToken) return;
+  clearTimeout(gdSyncTimer);
+  gdSyncTimer = setTimeout(() => saveToGDrive(false), 3000);
+}
+
+function setDriveStatus(cls, text) {
+  const el = document.getElementById('drive-status');
+  if (!el) return;
+  el.className = cls ? `visible ${cls}` : '';
+  el.textContent = text;
+}
+
+function updateDriveUI() {
+  const btn = document.getElementById('tb-drive');
+  if (!btn) return;
+  if (gdToken) {
+    btn.classList.add('active');
+    btn.title = 'Drive connected · click to sync · right-click to disconnect';
+  } else {
+    btn.classList.remove('active');
+    btn.title = 'Connect Google Drive';
+  }
+}
+
+// ── Persistence ────────────────────────────────────────────────────────
+function saveData() {
+  try { localStorage.setItem('ideagraph_v1', JSON.stringify({ nodes, edges, nextId })); } catch(e) {}
+  scheduleDriveSync();
+}
+function loadData() {
+  try {
+    const raw = localStorage.getItem('ideagraph_v1');
+    if (raw) { const d = JSON.parse(raw); nodes = d.nodes; edges = d.edges; nextId = d.nextId; return true; }
+  } catch(e) {}
+  return false;
+}
+
+// ── Canvas resize ──────────────────────────────────────────────────────
+function resizeCanvas() {
+  const area = document.getElementById('canvas-area');
+  canvas.width = area.clientWidth;
+  canvas.height = area.clientHeight;
+  minimapCanvas.width = 120;
+  minimapCanvas.height = 80;
+  draw();
+}
+
+// ── Coordinate transforms ──────────────────────────────────────────────
+function worldToScreen(x, y) {
+  return { x: (x + camX) * camZoom + canvas.width/2, y: (y + camY) * camZoom + canvas.height/2 };
+}
+function screenToWorld(sx, sy) {
+  return { x: (sx - canvas.width/2) / camZoom - camX, y: (sy - canvas.height/2) / camZoom - camY };
+}
+
+// ── Node geometry ──────────────────────────────────────────────────────
+function nodeRadius(n) { return Math.max(30, 24 + (getEdgesFor(n.id).length * 4)); }
+function getEdgesFor(id) { return edges.filter(e => e.source === id || e.target === id); }
+function getConnected(id) {
+  return edges.filter(e => e.source === id || e.target === id)
+    .map(e => e.source === id ? e.target : e.source)
+    .map(tid => nodes.find(n => n.id === tid)).filter(Boolean);
+}
+
+// ── Hit test ──────────────────────────────────────────────────────────
+function hitNode(sx, sy) {
+  const w = screenToWorld(sx, sy);
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const n = nodes[i];
+    const r = nodeRadius(n);
+    const dx = w.x - n.x, dy = w.y - n.y;
+    if (dx*dx + dy*dy <= r*r) return n;
+  }
+  return null;
+}
+
+// ── Rendering ──────────────────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawGrid();
+  ctx.save();
+  ctx.translate(canvas.width/2, canvas.height/2);
+  ctx.scale(camZoom, camZoom);
+  ctx.translate(camX, camY);
+  drawEdges();
+  drawNodes();
+  if (linkMode && linkSourceNode) drawLinkGhost();
+  ctx.restore();
+  drawMinimap();
+  updateZoomIndicator();
+}
+
+function drawGrid() {
+  const step = 40 * camZoom;
+  const ox = (camX * camZoom + canvas.width/2) % step;
+  const oy = (camY * camZoom + canvas.height/2) % step;
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  for (let x = ox; x < canvas.width; x += step) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+  for (let y = oy; y < canvas.height; y += step) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+}
+
+function drawEdges() {
+  edges.forEach(e => {
+    const a = nodes.find(n => n.id === e.source);
+    const b = nodes.find(n => n.id === e.target);
+    if (!a || !b) return;
+    const isHighlighted = selectedNode && (selectedNode.id === a.id || selectedNode.id === b.id);
+    const ra = nodeRadius(a), rb = nodeRadius(b);
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+    const nx = dx/dist, ny = dy/dist;
+    const x1 = a.x + nx*ra, y1 = a.y + ny*ra;
+    const x2 = b.x - nx*rb, y2 = b.y - ny*rb;
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = isHighlighted ? 'rgba(123,110,246,0.6)' : 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = isHighlighted ? 1.5 : 0.8;
+    ctx.stroke();
+
+    if (isHighlighted) {
+      // Arrow
+      const angle = Math.atan2(dy, dx);
+      ctx.save();
+      ctx.translate(x2, y2);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(-6, -4); ctx.lineTo(0, 0); ctx.lineTo(-6, 4);
+      ctx.strokeStyle = 'rgba(123,110,246,0.8)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.restore();
+    }
+  });
+}
+
+function drawNodes() {
+  const filtered = getFilteredNodes();
+  nodes.forEach(n => {
+    const isFiltered = filtered.includes(n);
+    const isSelected = selectedNode && selectedNode.id === n.id;
+    const isLinkSrc = linkSourceNode && linkSourceNode.id === n.id;
+    const r = nodeRadius(n);
+    const sc = worldToScreen(n.x, n.y);
+    const palette = COLOR_PALETTE.find(c => c.id === n.color) || COLOR_PALETTE[0];
+
+    ctx.save();
+
+    if (!isFiltered) { ctx.globalAlpha = 0.15; }
+
+    // Glow for selected
+    if (isSelected || isLinkSrc) {
+      ctx.shadowColor = palette.stroke;
+      ctx.shadowBlur = 18 * camZoom;
+    }
+
+    // Circle
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI*2);
+    ctx.fillStyle = palette.fill;
+    ctx.fill();
+    ctx.strokeStyle = isSelected ? palette.stroke : (isFiltered ? palette.stroke : 'rgba(255,255,255,0.15)');
+    ctx.lineWidth = isSelected ? 1.5 : 0.8;
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+
+    // Recency dot
+    const age = Date.now() - n.createdAt;
+    if (age < 3600000) { // less than 1 hour
+      ctx.beginPath();
+      ctx.arc(n.x + r - 4, n.y - r + 4, 4, 0, Math.PI*2);
+      ctx.fillStyle = '#5ecb8c';
+      ctx.fill();
+    }
+
+    // Label
+    const fontSize = Math.max(9, Math.min(12, r * 0.38));
+    ctx.font = `500 ${fontSize}px 'Syne', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = isFiltered ? palette.text : 'rgba(255,255,255,0.25)';
+
+    const maxW = r * 1.6;
+    let title = n.title;
+    while (ctx.measureText(title).width > maxW && title.length > 3) {
+      title = title.slice(0, -1);
+    }
+    if (title !== n.title) title += '…';
+    ctx.fillText(title, n.x, n.y);
+
+    // Connection count badge
+    const ec = getEdgesFor(n.id).length;
+    if (ec > 0) {
+      ctx.font = `400 8px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.fillText(ec, n.x, n.y + r * 0.6);
+    }
+
+    ctx.restore();
+  });
+}
+
+function drawLinkGhost() {
+  const src = linkSourceNode;
+  const w = screenToWorld(lastMousePos.x, lastMousePos.y);
+  ctx.beginPath();
+  ctx.moveTo(src.x, src.y);
+  ctx.lineTo(w.x, w.y);
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = 'rgba(123,110,246,0.5)';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawMinimap() {
+  const mw = 120, mh = 80;
+  mmCtx.clearRect(0, 0, mw, mh);
+  mmCtx.fillStyle = 'rgba(14,15,17,0.8)';
+  mmCtx.fillRect(0, 0, mw, mh);
+  if (!nodes.length) return;
+  const xs = nodes.map(n=>n.x), ys = nodes.map(n=>n.y);
+  const minX = Math.min(...xs)-60, maxX = Math.max(...xs)+60;
+  const minY = Math.min(...ys)-60, maxY = Math.max(...ys)+60;
+  const scaleX = mw / (maxX-minX||1), scaleY = mh / (maxY-minY||1);
+  const sc = Math.min(scaleX, scaleY) * 0.85;
+  const ox = (mw - (maxX-minX)*sc) / 2 - minX*sc;
+  const oy = (mh - (maxY-minY)*sc) / 2 - minY*sc;
+  edges.forEach(e => {
+    const a = nodes.find(n=>n.id===e.source), b = nodes.find(n=>n.id===e.target);
+    if (!a||!b) return;
+    mmCtx.beginPath();
+    mmCtx.moveTo(a.x*sc+ox, a.y*sc+oy);
+    mmCtx.lineTo(b.x*sc+ox, b.y*sc+oy);
+    mmCtx.strokeStyle = 'rgba(255,255,255,0.15)';
+    mmCtx.lineWidth = 0.5;
+    mmCtx.stroke();
+  });
+  nodes.forEach(n => {
+    const pal = COLOR_PALETTE.find(c=>c.id===n.color)||COLOR_PALETTE[0];
+    mmCtx.beginPath();
+    mmCtx.arc(n.x*sc+ox, n.y*sc+oy, 3, 0, Math.PI*2);
+    mmCtx.fillStyle = pal.stroke;
+    mmCtx.fill();
+  });
+  // Viewport rect
+  const vx1 = screenToWorld(0,0), vx2 = screenToWorld(canvas.width, canvas.height);
+  mmCtx.strokeStyle = 'rgba(123,110,246,0.5)';
+  mmCtx.lineWidth = 1;
+  mmCtx.strokeRect(vx1.x*sc+ox, vx1.y*sc+oy, (vx2.x-vx1.x)*sc, (vx2.y-vx1.y)*sc);
+}
+
+// ── Filter logic ──────────────────────────────────────────────────────
+function getFilteredNodes() {
+  let result = nodes;
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    result = result.filter(n => n.title.toLowerCase().includes(q) || (n.desc||'').toLowerCase().includes(q) || n.tags.some(t=>t.includes(q)));
+  }
+  if (activeTag) {
+    result = result.filter(n => n.tags.includes(activeTag));
+  }
+  return result;
+}
+
+// ── Sidebar update ────────────────────────────────────────────────────
+function updateSidebar() {
+  const filtered = getFilteredNodes();
+  const list = document.getElementById('node-list');
+  list.innerHTML = '';
+  [...filtered].sort((a,b) => b.createdAt - a.createdAt).forEach(n => {
+    const pal = COLOR_PALETTE.find(c=>c.id===n.color)||COLOR_PALETTE[0];
+    const div = document.createElement('div');
+    div.className = 'node-item' + (selectedNode?.id === n.id ? ' selected' : '');
+    div.innerHTML = `
+      <div class="node-item-title">${n.title}</div>
+      <div class="node-item-meta">${getEdgesFor(n.id).length} connections · ${timeAgo(n.createdAt)}</div>
+      ${n.tags.length ? `<div class="node-item-tags">${n.tags.map(t=>`<span class="node-tag" style="background:${pal.fill};color:${pal.text};border:1px solid ${pal.stroke}22">${t}</span>`).join('')}</div>` : ''}
+    `;
+    div.onclick = () => selectNode(n);
+    list.appendChild(div);
+  });
+
+  document.getElementById('node-count-label').textContent = `${nodes.length} nodes · ${edges.length} edges`;
+
+  // Tags
+  const allTags = [...new Set(nodes.flatMap(n=>n.tags))].sort();
+  const tagsEl = document.getElementById('tags-filter');
+  tagsEl.innerHTML = '';
+  allTags.forEach(t => {
+    const pill = document.createElement('div');
+    pill.className = 'tag-pill' + (activeTag === t ? ' active' : '');
+    pill.textContent = t;
+    pill.onclick = () => { activeTag = activeTag === t ? null : t; updateSidebar(); draw(); };
+    tagsEl.appendChild(pill);
+  });
+}
+
+// ── Detail panel ──────────────────────────────────────────────────────
+function selectNode(n) {
+  selectedNode = n;
+  document.querySelectorAll('.node-item').forEach(el=>el.classList.remove('selected'));
+  document.querySelectorAll('.node-item').forEach(el=>{
+    if(el.querySelector('.node-item-title')?.textContent === n.title) el.classList.add('selected');
+  });
+  openDetailPanel(n);
+  draw();
+}
+
+function openDetailPanel(n) {
+  const panel = document.getElementById('detail-panel');
+  panel.classList.add('open');
+  document.getElementById('detail-title').textContent = n.title;
+
+  const dsDesc = document.getElementById('ds-desc');
+  if (n.desc) { dsDesc.style.display=''; document.getElementById('detail-desc-text').textContent = n.desc; }
+  else dsDesc.style.display = 'none';
+
+  const dsTags = document.getElementById('ds-tags');
+  const pal = COLOR_PALETTE.find(c=>c.id===n.color)||COLOR_PALETTE[0];
+  if (n.tags.length) {
+    dsTags.style.display = '';
+    document.getElementById('detail-tags-list').innerHTML = n.tags.map(t =>
+      `<span class="node-tag" style="padding:3px 10px;font-size:11px;background:${pal.fill};color:${pal.text};border:1px solid ${pal.stroke}44;border-radius:20px">${t}</span>`
+    ).join('');
+  } else dsTags.style.display = 'none';
+
+  // Connected
+  const connected = getConnected(n.id);
+  const connList = document.getElementById('connected-list');
+  connList.innerHTML = connected.length ? connected.map(c => {
+    const cp = COLOR_PALETTE.find(x=>x.id===c.color)||COLOR_PALETTE[0];
+    return `<div class="connected-item" onclick="selectAndFocus(${c.id})">
+      <span class="conn-dot" style="background:${cp.stroke}"></span>${c.title}</div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--text3)">No connections yet</div>';
+
+  // Suggestions (simple word overlap)
+  const suggestions = getSuggestions(n).slice(0,3);
+  const sugList = document.getElementById('suggested-list');
+  const dsS = document.getElementById('ds-suggest');
+  if (suggestions.length) {
+    dsS.style.display = '';
+    sugList.innerHTML = suggestions.map(s => {
+      const sp = COLOR_PALETTE.find(x=>x.id===s.color)||COLOR_PALETTE[0];
+      return `<div class="connected-item" onclick="addEdgeAndRefresh(${n.id},${s.id})" style="border:1px dashed var(--border2)">
+        <span class="conn-dot" style="background:${sp.stroke};opacity:0.5"></span>
+        <span style="flex:1">${s.title}</span>
+        <span style="font-size:10px;color:var(--text3)">+ link</span>
+      </div>`;
+    }).join('');
+  } else dsS.style.display = 'none';
+}
+
+function getSuggestions(n) {
+  const myWords = new Set([...n.title.toLowerCase().split(/\s+/), ...n.tags]);
+  const alreadyConnected = new Set(getConnected(n.id).map(c=>c.id));
+  return nodes
+    .filter(o => o.id !== n.id && !alreadyConnected.has(o.id))
+    .map(o => {
+      const oWords = new Set([...o.title.toLowerCase().split(/\s+/), ...o.tags]);
+      const overlap = [...myWords].filter(w => oWords.has(w) && w.length > 3).length;
+      return { ...o, score: overlap };
+    })
+    .filter(o => o.score > 0)
+    .sort((a,b) => b.score - a.score);
+}
+
+window.selectAndFocus = function(id) {
+  const n = nodes.find(x=>x.id===id);
+  if (!n) return;
+  selectNode(n);
+  // Animate camera to node
+  const targetX = -n.x, targetY = -n.y;
+  animateCam(targetX, targetY, 1.2);
+};
+
+window.addEdgeAndRefresh = function(sid, tid) {
+  const exists = edges.find(e=>(e.source===sid&&e.target===tid)||(e.source===tid&&e.target===sid));
+  if (!exists) {
+    edges.push({ id:'e'+Date.now(), source:sid, target:tid });
+    saveData();
+    toast('Link created');
+  }
+  const n = nodes.find(x=>x.id===sid);
+  if (n) openDetailPanel(n);
+  draw();
+  updateSidebar();
+};
+
+function animateCam(tx, ty, tz) {
+  const steps = 20;
+  let step = 0;
+  const startX=camX, startY=camY, startZ=camZoom;
+  const tick = () => {
+    step++;
+    const t = step/steps;
+    const ease = 1 - Math.pow(1-t, 3);
+    camX = startX + (tx-startX)*ease;
+    camY = startY + (ty-startY)*ease;
+    camZoom = startZ + (tz-startZ)*ease;
+    draw();
+    if (step < steps) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+// ── Node CRUD ─────────────────────────────────────────────────────────
+function createNode(title, desc, tags, color, x, y) {
+  const n = {
+    id: nextId++,
+    title: title.trim(),
+    desc: desc.trim(),
+    tags: tags.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean),
+    color: color || 'purple',
+    x: x !== undefined ? x : (Math.random()-0.5)*400,
+    y: y !== undefined ? y : (Math.random()-0.5)*300,
+    createdAt: Date.now(),
+  };
+  nodes.push(n);
+  saveData();
+  updateSidebar();
+  draw();
+  selectNode(n);
+  animateCam(-n.x, -n.y, 1.0);
+  return n;
+}
+
+function deleteNode(id) {
+  nodes = nodes.filter(n=>n.id!==id);
+  edges = edges.filter(e=>e.source!==id && e.target!==id);
+  if (selectedNode?.id === id) {
+    selectedNode = null;
+    document.getElementById('detail-panel').classList.remove('open');
+  }
+  saveData();
+  updateSidebar();
+  draw();
+  toast('Node deleted');
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────
+function openModal(prefillTitle, editId) {
+  editingNodeId = editId || null;
+  const modal = document.getElementById('create-modal');
+  modal.classList.add('open');
+  document.getElementById('form-title').value = prefillTitle || '';
+  document.getElementById('form-desc').value = '';
+  document.getElementById('form-tags').value = '';
+  if (editId) {
+    const n = nodes.find(x=>x.id===editId);
+    if (n) {
+      document.getElementById('form-title').value = n.title;
+      document.getElementById('form-desc').value = n.desc||'';
+      document.getElementById('form-tags').value = n.tags.join(', ');
+      selectedColor = n.color;
+    }
+  }
+  renderColorPicker();
+  setTimeout(()=>document.getElementById('form-title').focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById('create-modal').classList.remove('open');
+  editingNodeId = null;
+}
+
+function renderColorPicker() {
+  const cp = document.getElementById('color-picker');
+  cp.innerHTML = COLOR_PALETTE.map(c =>
+    `<div class="color-opt ${selectedColor===c.id?'selected':''}" style="background:${c.stroke}" 
+      onclick="setColor('${c.id}')"></div>`
+  ).join('');
+}
+
+window.setColor = function(id) { selectedColor = id; renderColorPicker(); };
+
+function saveModal() {
+  const title = document.getElementById('form-title').value.trim();
+  if (!title) { document.getElementById('form-title').focus(); return; }
+  const desc = document.getElementById('form-desc').value;
+  const tags = document.getElementById('form-tags').value;
+  if (editingNodeId) {
+    const n = nodes.find(x=>x.id===editingNodeId);
+    if (n) {
+      n.title = title; n.desc = desc.trim();
+      n.tags = tags.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);
+      n.color = selectedColor;
+      saveData(); updateSidebar(); draw();
+      if (selectedNode?.id === editingNodeId) openDetailPanel(n);
+      toast('Node updated');
+    }
+  } else {
+    const w = screenToWorld(canvas.width/2, canvas.height/2);
+    createNode(title, desc, tags, selectedColor, w.x + (Math.random()-0.5)*120, w.y + (Math.random()-0.5)*80);
+    toast('Idea added');
+  }
+  closeModal();
+}
+
+// ── Link mode ──────────────────────────────────────────────────────────
+function enterLinkMode(sourceNode) {
+  linkMode = true;
+  linkSourceNode = sourceNode || selectedNode;
+  document.getElementById('tb-link').classList.add('active');
+  canvas.classList.add('linking');
+  document.getElementById('link-hint').classList.add('show');
+  toast('Click another node to link');
+}
+function exitLinkMode() {
+  linkMode = false;
+  linkSourceNode = null;
+  document.getElementById('tb-link').classList.remove('active');
+  canvas.classList.remove('linking');
+  document.getElementById('link-hint').classList.remove('show');
+  draw();
+}
+
+// ── Fit view ──────────────────────────────────────────────────────────
+function fitView() {
+  if (!nodes.length) return;
+  const xs = nodes.map(n=>n.x), ys = nodes.map(n=>n.y);
+  const minX=Math.min(...xs)-80, maxX=Math.max(...xs)+80;
+  const minY=Math.min(...ys)-80, maxY=Math.max(...ys)+80;
+  const scaleX = canvas.width / (maxX-minX||1), scaleY = canvas.height / (maxY-minY||1);
+  const newZoom = Math.min(scaleX, scaleY, 1.5) * 0.85;
+  const cx = (minX+maxX)/2, cy = (minY+maxY)/2;
+  animateCam(-cx, -cy, newZoom);
+}
+
+// ── Auto layout (force-directed) ──────────────────────────────────────
+function autoLayout() {
+  const iters = 200;
+  const k = 120;
+  toast('Running layout…');
+  for (let iter = 0; iter < iters; iter++) {
+    // Repulsion
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i+1; j < nodes.length; j++) {
+        const a=nodes[i], b=nodes[j];
+        const dx=b.x-a.x, dy=b.y-a.y;
+        const d=Math.sqrt(dx*dx+dy*dy)||1;
+        const f=(k*k)/d;
+        const fx=f*dx/d, fy=f*dy/d;
+        a.x-=fx*0.1; a.y-=fy*0.1;
+        b.x+=fx*0.1; b.y+=fy*0.1;
+      }
+    }
+    // Attraction
+    edges.forEach(e => {
+      const a=nodes.find(n=>n.id===e.source), b=nodes.find(n=>n.id===e.target);
+      if(!a||!b) return;
+      const dx=b.x-a.x, dy=b.y-a.y;
+      const d=Math.sqrt(dx*dx+dy*dy)||1;
+      const f=(d*d)/(k*3);
+      const fx=f*dx/d, fy=f*dy/d;
+      a.x+=fx*0.05; a.y+=fy*0.05;
+      b.x-=fx*0.05; b.y-=fy*0.05;
+    });
+  }
+  saveData();
+  fitView();
+  draw();
+  setTimeout(()=>toast('Layout done'), 300);
+}
+
+// ── Export ────────────────────────────────────────────────────────────
+function exportJSON() {
+  const data = JSON.stringify({ nodes, edges }, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'ideagraph.json'; a.click();
+  URL.revokeObjectURL(url);
+  toast('Exported ideagraph.json');
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2200);
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────
+function timeAgo(ts) {
+  const s = (Date.now()-ts)/1000;
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  if (s < 86400) return `${Math.floor(s/3600)}h ago`;
+  return `${Math.floor(s/86400)}d ago`;
+}
+function updateZoomIndicator() {
+  document.getElementById('zoom-indicator').textContent = Math.round(camZoom*100) + '%';
+}
+
+// ── Input events ──────────────────────────────────────────────────────
+// Quick add
+const quickInput = document.getElementById('quick-input');
+quickInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && quickInput.value.trim()) {
+    const w = screenToWorld(canvas.width/2, canvas.height/2);
+    createNode(quickInput.value, '', '', 'purple', w.x+(Math.random()-0.5)*150, w.y+(Math.random()-0.5)*100);
+    quickInput.value = '';
+    toast('Idea added');
+  }
+  if (e.key === 'Escape') { quickInput.value = ''; quickInput.blur(); }
+});
+
+// Search
+document.getElementById('search-input').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  updateSidebar();
+  draw();
+});
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openModal(); }
+  if (e.key === 'Escape') { exitLinkMode(); closeModal(); }
+  if (e.key === 'l' || e.key === 'L') { if (selectedNode) enterLinkMode(); }
+  if (e.key === 'f' || e.key === 'F') fitView();
+  if (e.key === '+' || e.key === '=') { camZoom = Math.min(camZoom*1.15, 4); draw(); }
+  if (e.key === '-') { camZoom = Math.max(camZoom/1.15, 0.15); draw(); }
+  if (e.key === 'Delete' || e.key === 'Backspace') { if (selectedNode) deleteNode(selectedNode.id); }
+});
+
+// Canvas mouse
+canvas.addEventListener('mousedown', e => {
+  const hit = hitNode(e.clientX - canvas.getBoundingClientRect().left, e.clientY - canvas.getBoundingClientRect().top);
+  const cx = e.clientX - canvas.getBoundingClientRect().left;
+  const cy = e.clientY - canvas.getBoundingClientRect().top;
+
+  if (linkMode) {
+    if (hit && linkSourceNode && hit.id !== linkSourceNode.id) {
+      const exists = edges.find(ed=>(ed.source===linkSourceNode.id&&ed.target===hit.id)||(ed.source===hit.id&&ed.target===linkSourceNode.id));
+      if (!exists) { edges.push({id:'e'+Date.now(), source:linkSourceNode.id, target:hit.id}); saveData(); toast('Linked!'); }
+      else toast('Already linked');
+      openDetailPanel(linkSourceNode);
+      updateSidebar();
+    }
+    exitLinkMode();
+    draw();
+    return;
+  }
+
+  if (hit) {
+    isDraggingNode = true;
+    dragNodeId = hit.id;
+    dragNodeStart = { mx: cx, my: cy, nx: hit.x, ny: hit.y };
+    selectNode(hit);
+  } else {
+    isDragging = true;
+    dragStart = { x: cx, y: cy };
+    camStart = { x: camX, y: camY };
+    canvas.classList.add('dragging');
+    // Deselect
+    selectedNode = null;
+    document.getElementById('detail-panel').classList.remove('open');
+    updateSidebar();
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+  lastMousePos = { x: cx, y: cy };
+
+  if (isDraggingNode && dragNodeStart) {
+    const dx = (cx - dragNodeStart.mx) / camZoom;
+    const dy = (cy - dragNodeStart.my) / camZoom;
+    const n = nodes.find(x=>x.id===dragNodeId);
+    if (n) { n.x = dragNodeStart.nx + dx; n.y = dragNodeStart.ny + dy; }
+    draw();
+  } else if (isDragging && dragStart) {
+    camX = camStart.x + (cx - dragStart.x) / camZoom;
+    camY = camStart.y + (cy - dragStart.y) / camZoom;
+    draw();
+  } else if (linkMode) {
+    draw();
+  }
+});
+
+canvas.addEventListener('mouseup', e => {
+  if (isDraggingNode) { saveData(); }
+  isDragging = false; isDraggingNode = false; dragNodeId = null;
+  canvas.classList.remove('dragging');
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left - canvas.width/2;
+  const my = e.clientY - rect.top - canvas.height/2;
+  const factor = e.deltaY > 0 ? 0.9 : 1.1;
+  camX = (camX * camZoom - mx) / (camZoom * factor) + mx / (camZoom * factor);
+  camY = (camY * camZoom - my) / (camZoom * factor) + my / (camZoom * factor);
+  camZoom = Math.max(0.15, Math.min(4, camZoom * factor));
+  draw();
+}, { passive: false });
+
+canvas.addEventListener('dblclick', e => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+  const hit = hitNode(cx, cy);
+  if (!hit) {
+    const w = screenToWorld(cx, cy);
+    openModal('');
+    // Store position for creation
+    canvas._pendingX = w.x;
+    canvas._pendingY = w.y;
+  }
+});
+
+// Toolbar
+document.getElementById('tb-add').onclick = () => openModal();
+document.getElementById('tb-link').onclick = () => { if (linkMode) exitLinkMode(); else if (selectedNode) enterLinkMode(); else toast('Select a node first'); };
+document.getElementById('tb-fit').onclick = fitView;
+document.getElementById('tb-zoom-in').onclick = () => { camZoom = Math.min(camZoom*1.2,4); draw(); };
+document.getElementById('tb-zoom-out').onclick = () => { camZoom = Math.max(camZoom/1.2,0.15); draw(); };
+document.getElementById('tb-layout').onclick = autoLayout;
+document.getElementById('tb-export').onclick = exportJSON;
+document.getElementById('tb-drive').onclick = onDriveButtonClick;
+document.getElementById('tb-drive').oncontextmenu = onDriveButtonRightClick;
+
+// Modal
+document.getElementById('modal-save').onclick = saveModal;
+document.getElementById('modal-cancel').onclick = closeModal;
+document.getElementById('create-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+document.getElementById('form-title').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) saveModal(); });
+
+// Detail panel
+document.getElementById('detail-close').onclick = () => {
+  document.getElementById('detail-panel').classList.remove('open');
+  selectedNode = null;
+  updateSidebar();
+  draw();
+};
+document.getElementById('detail-link-btn').onclick = () => { if (selectedNode) enterLinkMode(selectedNode); };
+document.getElementById('detail-edit-btn').onclick = () => { if (selectedNode) openModal(null, selectedNode.id); };
+document.getElementById('detail-delete-btn').onclick = () => { if (selectedNode && confirm(`Delete "${selectedNode.title}"?`)) deleteNode(selectedNode.id); };
+
+// ── Init ──────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => { resizeCanvas(); draw(); });
+resizeCanvas();
+if (!loadData()) seedData();
+updateSidebar();
+fitView();
+setTimeout(() => { updateSidebar(); draw(); }, 100);
+
+// Google Drive init — handle both orderings of script execution vs GIS load
+if (window._gsiLoaded) {
+  // GIS already loaded before this script ran
+  initGoogleDrive();
+} else {
+  // GIS will call onGoogleLibraryLoad (set in <head>) once it loads,
+  // which then calls initGoogleDrive via _gsiReadyCallback
+  window._gsiReadyCallback = initGoogleDrive;
+}
+</script>
+</body>
+</html>
