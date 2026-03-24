@@ -262,6 +262,86 @@
   .ps-add-btn:hover { background: var(--accent); color: #fff; }
   .ps-add-btn.added { background: var(--green-dim); border-color: var(--green); color: var(--green); cursor: default; }
   .ps-footer { padding: 8px 18px; border-top: 1px solid var(--border); font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; display: flex; justify-content: space-between; }
+
+  /* ── Q&A Chat Panel ── */
+  #qa-panel {
+    position: absolute; bottom: 80px; right: 16px; width: 380px; height: 460px;
+    background: var(--surface); border: 1px solid var(--border2); border-radius: 14px;
+    display: flex; flex-direction: column;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.55);
+    z-index: 30; opacity: 0; pointer-events: none;
+    transform: translateY(12px); transition: opacity 0.2s, transform 0.2s; overflow: hidden;
+  }
+  #qa-panel.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+  #qa-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  #qa-title { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+  #qa-key-btn {
+    background: none; border: 1px solid var(--border2); border-radius: var(--radius-sm);
+    color: var(--text3); font-size: 10px; padding: 2px 7px; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; transition: all 0.15s; white-space: nowrap;
+  }
+  #qa-key-btn:hover { border-color: var(--accent); color: var(--accent2); }
+  #qa-key-btn.set { color: var(--green); border-color: var(--green); }
+  #qa-close { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 15px; padding: 2px 4px; line-height: 1; }
+  #qa-close:hover { color: var(--text); }
+  #qa-key-prompt {
+    padding: 12px 14px; display: flex; flex-direction: column; gap: 7px;
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  #qa-key-prompt-label { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+  #qa-key-input-row { display: flex; gap: 6px; }
+  #qa-key-field {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 6px 10px; font-size: 12px; color: var(--text);
+    font-family: 'JetBrains Mono', monospace; outline: none; transition: border-color 0.2s;
+  }
+  #qa-key-field:focus { border-color: var(--accent); }
+  #qa-key-field::placeholder { color: var(--text3); }
+  #qa-key-save {
+    padding: 6px 12px; background: var(--accent); border: none; border-radius: var(--radius-sm);
+    color: #fff; font-size: 12px; font-family: 'Syne', sans-serif; font-weight: 600;
+    cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
+  }
+  #qa-key-save:hover { opacity: 0.85; }
+  #qa-messages {
+    flex: 1; overflow-y: auto; padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  #qa-messages::-webkit-scrollbar { width: 4px; }
+  #qa-messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .qa-msg { display: flex; flex-direction: column; gap: 3px; max-width: 92%; }
+  .qa-msg.user { align-self: flex-end; align-items: flex-end; }
+  .qa-msg.model { align-self: flex-start; align-items: flex-start; }
+  .qa-bubble {
+    padding: 8px 12px; border-radius: 10px; font-size: 12px; line-height: 1.55;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .qa-msg.user .qa-bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 3px; }
+  .qa-msg.model .qa-bubble { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+  .qa-msg-meta { font-size: 9px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+  .qa-typing .qa-bubble { background: var(--surface2); border: 1px solid var(--border); color: var(--text3); font-size: 14px; letter-spacing: 3px; border-bottom-left-radius: 3px; }
+  #qa-input-row {
+    display: flex; gap: 8px; padding: 10px 14px;
+    border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  #qa-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 7px 11px; font-size: 12px; color: var(--text);
+    font-family: 'Syne', sans-serif; outline: none; resize: none; height: 34px; max-height: 80px;
+    overflow-y: auto; transition: border-color 0.2s; line-height: 1.4;
+  }
+  #qa-input:focus { border-color: var(--accent); }
+  #qa-input::placeholder { color: var(--text3); }
+  #qa-send {
+    width: 34px; height: 34px; background: var(--accent); border: none;
+    border-radius: var(--radius-sm); color: #fff; font-size: 14px; cursor: pointer;
+    transition: opacity 0.15s; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  #qa-send:hover { opacity: 0.85; }
+  #qa-send:disabled { opacity: 0.35; cursor: default; }
 </style>
 <script>
   // Must be defined BEFORE the GIS script loads so the callback isn't missed
@@ -450,6 +530,27 @@
     </div>
   </div>
 
+  <!-- Q&A Chat Panel -->
+  <div id="qa-panel">
+    <div id="qa-header">
+      <span id="qa-title">✦ Ask about this graph</span>
+      <button id="qa-key-btn" title="Set Gemini API key">⚿ key</button>
+      <button id="qa-close" title="Close (Esc)">✕</button>
+    </div>
+    <div id="qa-key-prompt" style="display:none">
+      <div id="qa-key-prompt-label">GEMINI API KEY (free tier — stored locally)</div>
+      <div id="qa-key-input-row">
+        <input id="qa-key-field" type="password" placeholder="AIza…" autocomplete="off" spellcheck="false" />
+        <button id="qa-key-save">Save</button>
+      </div>
+    </div>
+    <div id="qa-messages"></div>
+    <div id="qa-input-row">
+      <textarea id="qa-input" placeholder="Ask anything about your graph…" rows="1"></textarea>
+      <button id="qa-send" title="Send (Enter)">➤</button>
+    </div>
+  </div>
+
   <!-- Toolbar -->
   <div id="toolbar">
     <button class="tb-btn" id="tb-add" title="Add node (⌘K)">＋</button>
@@ -465,6 +566,8 @@
     <button class="tb-btn" id="tb-export" title="Export JSON">↓</button>
     <div class="tb-sep"></div>
     <button class="tb-btn" id="tb-drive" title="Connect Google Drive">☁</button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="tb-qa" title="Ask AI (⌘/)">✦</button>
   </div>
 
   <div id="toast"></div>
@@ -498,7 +601,7 @@ function tagToColor(tag) {
   return opts[h % opts.length];
 }
 
-const VERSION = '1.2.0';
+const VERSION = '1.3.0';
 const GRAPHS_KEY = 'ideagraph_graphs';
 const ACTIVE_KEY = 'ideagraph_active';
 
@@ -534,6 +637,13 @@ let selectedStatus = 'want';
 let colorExplicitlySet = false;
 let editingNodeId = null;
 let hoveredNode = null;
+
+// Q&A panel state
+let qaOpen = false;
+let qaChatHistory = []; // [{role:'user'|'model', text, ts}]
+let qaApiKey = '';
+const QA_KEY_STORAGE = 'ideagraph_gemini_key';
+const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 // Camera
 let camX = 0, camY = 0, camZoom = 1;
@@ -905,6 +1015,200 @@ function closePaperSearch() {
   document.getElementById('paper-search-modal').classList.remove('open');
   document.getElementById('ps-input').value = '';
   document.getElementById('ps-results').innerHTML = '<div id="ps-status">Type to search papers — press Enter or wait</div>';
+}
+
+// ── Q&A Chat Panel ──────────────────────────────────────────────────────
+
+function initQA() {
+  qaApiKey = localStorage.getItem(QA_KEY_STORAGE) || '';
+  _updateQAKeyBtn();
+}
+
+function _updateQAKeyBtn() {
+  const btn = document.getElementById('qa-key-btn');
+  if (!btn) return;
+  if (qaApiKey) { btn.textContent = '⚿ key set'; btn.classList.add('set'); }
+  else { btn.textContent = '⚿ key'; btn.classList.remove('set'); }
+}
+
+function openQAPanel() {
+  qaOpen = true;
+  document.getElementById('qa-panel').classList.add('open');
+  document.getElementById('tb-qa').classList.add('active');
+  document.getElementById('qa-key-prompt').style.display = qaApiKey ? 'none' : '';
+  setTimeout(() => {
+    if (qaApiKey) document.getElementById('qa-input').focus();
+    else document.getElementById('qa-key-field').focus();
+  }, 60);
+  if (!qaChatHistory.length) renderQAMessages();
+}
+
+function closeQAPanel() {
+  qaOpen = false;
+  document.getElementById('qa-panel').classList.remove('open');
+  document.getElementById('tb-qa').classList.remove('active');
+}
+
+function buildGraphContext() {
+  if (!nodes.length) return 'The graph is currently empty.';
+  const graphName = document.getElementById('graph-name')?.textContent || 'My Graph';
+  const lines = [
+    `Graph: "${graphName}" — ${nodes.length} node${nodes.length !== 1 ? 's' : ''}, ${edges.length} edge${edges.length !== 1 ? 's' : ''}.`,
+    '', '== NODES ==',
+  ];
+  nodes.forEach(n => {
+    const statusLabel = STATUS_OPTIONS.find(s => s.id === (n.status || 'want'))?.label || n.status;
+    const tagStr = n.tags.length ? `[${n.tags.join(', ')}]` : '';
+    const yearStr = n.year ? ` (${n.year})` : '';
+    lines.push(`• [ID:${n.id}] ${n.title}${yearStr} ${tagStr} — status: ${statusLabel}`);
+    if (n.desc && n.desc.trim()) {
+      const desc = n.desc.trim();
+      lines.push(`  Abstract: ${desc.length > 300 ? desc.slice(0, 300) + '…' : desc}`);
+    }
+  });
+  if (edges.length) {
+    lines.push('', '== EDGES ==');
+    edges.forEach(e => {
+      const src = nodes.find(x => x.id === e.source);
+      const tgt = nodes.find(x => x.id === e.target);
+      if (!src || !tgt) return;
+      const lbl = e.label ? ` ("${e.label}")` : '';
+      lines.push(`• ${src.title} —[${e.type}]→ ${tgt.title}${lbl}`);
+    });
+  }
+  return lines.join('\n');
+}
+
+function _buildSystemPrompt() {
+  return `You are an expert research assistant embedded in IdeaGraph, a personal knowledge graph tool for researchers and learners.
+
+The user has a knowledge graph with the following content:
+
+${buildGraphContext()}
+
+Your role:
+- Answer questions about the ideas, papers, and concepts in this graph
+- Suggest connections between nodes the user might not have considered
+- Explain prerequisite relationships and recommend a study order
+- Summarize clusters of related concepts
+- Help the user understand how ideas relate to each other
+
+Guidelines:
+- Be concise but thorough. Prefer bullet points for lists.
+- If asked about a specific node, use its title, description, tags, and connections.
+- If the graph is sparse or empty, help the user think about what ideas to add.
+- Do not make up paper titles or arXiv IDs. Only reference content that exists in the graph.
+- Use plain text only — no markdown headers, no bold/italic (the UI does not render markdown).`;
+}
+
+async function sendQAMessage(text) {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+  if (!qaApiKey) {
+    document.getElementById('qa-key-prompt').style.display = '';
+    document.getElementById('qa-key-field').focus();
+    toast('Please set your Gemini API key first');
+    return;
+  }
+  qaChatHistory.push({ role: 'user', text: trimmed, ts: Date.now() });
+  renderQAMessages();
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  inputEl.value = '';
+  inputEl.style.height = '34px';
+  sendBtn.disabled = true;
+  _appendTypingIndicator();
+
+  const contents = qaChatHistory.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
+  const body = { system_instruction: { parts: [{ text: _buildSystemPrompt() }] }, contents };
+
+  try {
+    const resp = await fetch(`${GEMINI_ENDPOINT}?key=${encodeURIComponent(qaApiKey)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    _removeTypingIndicator();
+    if (!resp.ok) {
+      let errMsg = `API error ${resp.status}`;
+      try { const ej = await resp.json(); errMsg = ej?.error?.message || errMsg; } catch(_) {}
+      if (resp.status === 403) errMsg = 'API key invalid or quota exceeded.';
+      if (resp.status === 429) errMsg = 'Rate limit — wait a moment and try again.';
+      if (resp.status === 400) errMsg = 'Bad request — check your API key.';
+      qaChatHistory.push({ role: 'model', text: `Error: ${errMsg}`, ts: Date.now() });
+      renderQAMessages();
+      sendBtn.disabled = false;
+      return;
+    }
+    const json = await resp.json();
+    const modelText = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!modelText) {
+      const reason = json?.candidates?.[0]?.finishReason || 'unknown';
+      qaChatHistory.push({ role: 'model', text: `(No response — finish reason: ${reason})`, ts: Date.now() });
+    } else {
+      qaChatHistory.push({ role: 'model', text: modelText, ts: Date.now() });
+    }
+    renderQAMessages();
+  } catch (err) {
+    _removeTypingIndicator();
+    qaChatHistory.push({
+      role: 'model',
+      text: err instanceof TypeError ? 'Network error — are you online?' : `Error: ${err.message}`,
+      ts: Date.now()
+    });
+    renderQAMessages();
+    console.error('Gemini QA error:', err);
+  }
+  sendBtn.disabled = false;
+  inputEl.focus();
+}
+
+function renderQAMessages() {
+  const container = document.getElementById('qa-messages');
+  if (!container) return;
+  if (!qaChatHistory.length) {
+    container.innerHTML = `<div style="font-size:11px;color:var(--text3);text-align:center;padding:24px 8px;font-family:'JetBrains Mono',monospace;line-height:1.8">
+      Ask anything about your graph.<br>
+      Try: "What should I study first?"<br>or "Summarise the main topics."
+    </div>`;
+    return;
+  }
+  container.innerHTML = '';
+  qaChatHistory.forEach(m => {
+    const div = document.createElement('div');
+    div.className = `qa-msg ${m.role}`;
+    div.innerHTML = `<div class="qa-bubble">${_escapeHtml(m.text)}</div>
+      <div class="qa-msg-meta">${m.role === 'user' ? 'you' : 'gemini'} · ${_qaTimeStr(m.ts)}</div>`;
+    container.appendChild(div);
+  });
+  container.scrollTop = container.scrollHeight;
+}
+
+function _appendTypingIndicator() {
+  const container = document.getElementById('qa-messages');
+  if (!container) return;
+  const div = document.createElement('div');
+  div.className = 'qa-msg model qa-typing';
+  div.id = 'qa-typing-indicator';
+  div.innerHTML = `<div class="qa-bubble">· · ·</div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function _removeTypingIndicator() {
+  const el = document.getElementById('qa-typing-indicator');
+  if (el) el.remove();
+}
+
+function _escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function _qaTimeStr(ts) {
+  const s = (Date.now() - ts) / 1000;
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  return `${Math.floor(s/3600)}h ago`;
 }
 
 function renderPaperResults(papers, query) {
@@ -1941,7 +2245,8 @@ document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openModal(); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'p') { e.preventDefault(); openPaperSearch(); }
-  if (e.key === 'Escape') { exitLinkMode(); closeModal(); closePaperSearch(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); if (qaOpen) closeQAPanel(); else openQAPanel(); }
+  if (e.key === 'Escape') { exitLinkMode(); closeModal(); closePaperSearch(); closeQAPanel(); }
   if (e.key === 'l' || e.key === 'L') { if (selectedNode) enterLinkMode(); }
   if (e.key === 'f' || e.key === 'F') fitView();
   if (e.key === '+' || e.key === '=') { camZoom = Math.min(camZoom*1.15, 4); draw(); }
@@ -2070,6 +2375,44 @@ document.getElementById('tb-export').onclick = exportJSON;
 document.getElementById('tb-paper-search').onclick = openPaperSearch;
 document.getElementById('tb-drive').onclick = onDriveButtonClick;
 document.getElementById('tb-drive').oncontextmenu = onDriveButtonRightClick;
+
+// Q&A panel
+document.getElementById('tb-qa').onclick = () => { if (qaOpen) closeQAPanel(); else openQAPanel(); };
+document.getElementById('qa-close').onclick = closeQAPanel;
+document.getElementById('qa-panel').addEventListener('click', e => e.stopPropagation());
+document.getElementById('qa-key-btn').onclick = () => {
+  const promptEl = document.getElementById('qa-key-prompt');
+  const isVisible = promptEl.style.display !== 'none';
+  promptEl.style.display = isVisible ? 'none' : '';
+  if (!isVisible) setTimeout(() => document.getElementById('qa-key-field').focus(), 40);
+};
+document.getElementById('qa-key-save').onclick = () => {
+  const key = document.getElementById('qa-key-field').value.trim();
+  if (!key) { toast('Please enter an API key'); return; }
+  qaApiKey = key;
+  localStorage.setItem(QA_KEY_STORAGE, key);
+  document.getElementById('qa-key-prompt').style.display = 'none';
+  document.getElementById('qa-key-field').value = '';
+  _updateQAKeyBtn();
+  toast('API key saved ✓');
+  document.getElementById('qa-input').focus();
+  renderQAMessages();
+};
+document.getElementById('qa-key-field').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('qa-key-save').click();
+  if (e.key === 'Escape') document.getElementById('qa-key-prompt').style.display = 'none';
+});
+document.getElementById('qa-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendQAMessage(document.getElementById('qa-input').value);
+  }
+});
+document.getElementById('qa-input').addEventListener('input', function() {
+  this.style.height = '34px';
+  this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+});
+document.getElementById('qa-send').onclick = () => sendQAMessage(document.getElementById('qa-input').value);
 
 // Modal
 document.getElementById('modal-save').onclick = saveModal;
@@ -2246,6 +2589,7 @@ updateGraphSelector();
 document.title = `IdeaGraph — ${graphs.find(g=>g.id===currentGraphId)?.name || 'My Graph'}`;
 if (!loadData()) seedData();
 updateSidebar();
+initQA();
 fitView();
 setTimeout(() => { updateSidebar(); draw(); }, 100);
 
