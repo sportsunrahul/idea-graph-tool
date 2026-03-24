@@ -784,21 +784,19 @@ function extractArxivId(url) {
 }
 
 async function fetchArxivMetadata(arxivId) {
-  // OpenAlex direct entity lookup by arXiv ID
-  const url = `https://api.openalex.org/works/arxiv:${arxivId}?mailto=ideagraph@user.local`;
+  const url = `https://api.semanticscholar.org/graph/v1/paper/arXiv:${arxivId}?fields=title,abstract,year,fieldsOfStudy`;
   const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
-  if (!resp.ok) throw new Error(`OpenAlex ${resp.status}: paper not found`);
+  if (!resp.ok) throw new Error(`S2 ${resp.status}: paper not found`);
   const paper = await resp.json();
   const title = paper.title || '';
-  const summary = reconstructAbstract(paper.abstract_inverted_index);
-  const year = paper.publication_year || null;
+  const summary = paper.abstract || '';
+  const year = paper.year || null;
   const fieldMap = {
     'Computer Vision': 'computer-vision', 'Machine Learning': 'machine-learning',
     'Artificial Intelligence': 'machine-learning', 'Natural Language Processing': 'nlp',
     'Robotics': 'robotics', 'Pattern Recognition': 'computer-vision',
-    'Deep Learning': 'machine-learning', 'Image Processing': 'computer-vision',
   };
-  const tags = [...new Set((paper.topics || []).map(t => fieldMap[t.display_name]).filter(Boolean))];
+  const tags = [...new Set((paper.fieldsOfStudy || []).map(f => fieldMap[f]).filter(Boolean))];
   return { title, abstract: summary ? summary.slice(0, 280) + (summary.length > 280 ? '…' : '') : '', year, tags };
 }
 
