@@ -937,9 +937,10 @@ function triggerPaperSearch() {
   searchArxivPapers(query).then(results => {
     spinner.style.display = 'none';
     renderPaperResults(results, query);
-  }).catch(() => {
+  }).catch((err) => {
     spinner.style.display = 'none';
-    document.getElementById('ps-results').innerHTML = `<div id="ps-status">Search failed — check network</div>`;
+    document.getElementById('ps-results').innerHTML = `<div id="ps-status">Search failed: ${err.message}</div>`;
+    console.error('Paper search error:', err);
   });
 }
 
