@@ -14,20 +14,23 @@ python3 -m http.server 8080
 
 > Google Drive sync requires HTTP (not `file://`). For local testing without Drive, just open the HTML file directly in a browser.
 
+## Versioning
+
+**Every code change must bump `VERSION` in the JS constants block** (near the top of the script section). Use semantic versioning: patch bump (`1.2.0 → 1.2.1`) for fixes, minor bump (`1.2.x → 1.3.0`) for new features. The version is displayed as a badge next to the logo in the sidebar.
+
 ## Architecture
 
-The entire application lives in one file: `idea-tool/idea-graph-tool.html`. It contains inline CSS (~350 lines), inline HTML structure, and inline JavaScript (~1700 lines). There is no build system, bundler, framework, or external runtime dependency.
+The entire application lives in one file: `idea-tool/idea-graph-tool.html`. It contains inline CSS (~400 lines), inline HTML structure, and inline JavaScript (~2200 lines). There is no build system, bundler, framework, or external runtime dependency.
 
 ### Data model
 
 **Node:**
 ```js
-{ id, title, desc, tags[], color, status, mastery, resources[], year, x, y, createdAt }
+{ id, title, desc, tags[], color, status, resources[], year, x, y, createdAt }
 ```
 - `color`: one of `purple | teal | amber | coral | green | gray` (maps to `COLOR_PALETTE`). Auto-assigned from `tagToColor(tags[0])` when not explicitly set.
 - `status`: `want | in-progress | done`
-- `mastery`: `0–5` (maps to `MASTERY_LABELS`)
-- `resources`: array of URL strings (arXiv URLs are auto-fetched)
+- `resources`: array of URL strings (arXiv URLs are auto-fetched via Semantic Scholar)
 - `year`: publication year, integer or null
 
 **Edge:**
@@ -42,14 +45,25 @@ The entire application lives in one file: `idea-tool/idea-graph-tool.html`. It c
 
 Every load path (localStorage + Google Drive) runs `migrateData()` before assigning to `nodes`/`edges`. This normalises any missing fields to their defaults. **When adding a new field to a node or edge, always add its default to `migrateNode()` or `migrateEdge()`** — never rely solely on `|| default` inline fallbacks.
 
+### Multi-graph storage
+
+Multiple named graphs are supported. Storage layout:
+- `ideagraph_graphs` — JSON array of `{id, name, createdAt}` objects
+- `ideagraph_active` — ID string of the currently active graph
+- `ideagraph_v1` — data for the `default` graph (backward compat key)
+- `ideagraph_v1_<id>` — data for any other graph
+
+`graphDataKey(id)` returns the correct localStorage key. `loadGraphList()` bootstraps the default graph on first run. Switching graphs saves the current state, clears `nodes`/`edges`, and loads the new graph.
+
 ### State
 
 All mutable state is module-level `let` variables. Key ones:
 - `nodes[]`, `edges[]`, `nextId` — the graph data
+- `currentGraphId`, `graphs[]` — multi-graph state
 - `selectedNode`, `linkMode`, `prereqLinkMode`, `improvesLinkMode`, `linkSourceNode` — interaction state
 - `camX`, `camY`, `camZoom` — canvas camera
 - `activeTag`, `activeStatus`, `searchQuery`, `sidebarView` — sidebar filters (`sidebarView`: `'list' | 'order'`)
-- `selectedColor`, `selectedStatus`, `selectedMastery`, `colorExplicitlySet`, `editingNodeId` — modal form state
+- `selectedColor`, `selectedStatus`, `colorExplicitlySet`, `editingNodeId` — modal form state
 - `hoveredNode` — node currently under cursor (drives tooltip + hover ring)
 
 ### Rendering
@@ -71,7 +85,6 @@ Node positions (`n.x`, `n.y`) are in world space. Use `worldToScreen()` / `scree
 
 - **Stroke colour** — driven by `status` (gray/amber/green), not the node's `color`.
 - **Fill** — driven by `color` via `COLOR_PALETTE`.
-- **Mastery arc** — partial ring outside the node circle, from top going clockwise, covering `mastery/5` of circumference.
 - **Status badge** — small filled circle at bottom-right of node, colour matches status.
 - **Label** — rendered below the node circle (not inside), zoom-adaptive (`camZoom > 0.28` to show), full title never truncated.
 - **Cluster halos** — `drawClusterHalos()` draws soft radial gradients behind nodes sharing a tag, colour from `tagToColor()`.
@@ -86,7 +99,7 @@ Node positions (`n.x`, `n.y`) are in world space. Use `worldToScreen()` / `scree
 
 ### Persistence
 
-Data auto-saves to `localStorage` key `ideagraph_v1` on every mutation via `saveData()`. Google Drive sync is debounced 3 seconds after `saveData()`. Load order on startup: `loadData()` (localStorage) → if empty, `seedData()`.
+Data auto-saves to localStorage on every mutation via `saveData()`. Google Drive sync is debounced 3 seconds after `saveData()`. Load order on startup: `loadGraphList()` → `loadData()` (localStorage) → if empty, `seedData()`.
 
 ### Key functions
 
@@ -98,7 +111,7 @@ Data auto-saves to `localStorage` key `ideagraph_v1` on every mutation via `save
 | `openDetailPanel(n)` | Populates all detail panel sections for node `n` |
 | `openModal(prefillTitle?, editId?)` | Opens create/edit modal; `editId` triggers edit mode |
 | `saveModal()` | Reads form state and creates or updates a node |
-| `createNode(title, desc, tags, color, x, y, status, mastery, resources, year)` | Adds node to `nodes[]`, saves, redraws. Pass `null` for `color` to auto-assign from tags. |
+| `createNode(title, desc, tags, color, x, y, status, resources, year)` | Adds node to `nodes[]`, saves, redraws. Pass `null` for `color` to auto-assign from tags. |
 | `migrateData(d)` | Normalises raw JSON to current schema — call on every load |
 | `enterLinkMode(src)` | Activates link-drawing mode; checks `prereqLinkMode`/`improvesLinkMode` for edge type |
 | `getFilteredNodes()` | Returns nodes matching current search + tag + status filters |
@@ -107,21 +120,25 @@ Data auto-saves to `localStorage` key `ideagraph_v1` on every mutation via `save
 | `getTopologicalStudyOrder()` | Kahn's algorithm over the prereq graph; used by Study Order sidebar view |
 | `getNextToStudy()` | Returns nodes with `status !== 'done'` whose all prereqs are `done`, sorted by connection count |
 | `updateStudyNextCard()` | Refreshes the "Study Next" card in the sidebar |
-| `fetchArxivMetadata(arxivId)` | Fetches title/abstract/year/tags from `export.arxiv.org` API |
+| `fetchArxivMetadata(arxivId)` | Fetches title/abstract/year/tags from Semantic Scholar API (`/paper/arXiv:<id>`) |
 | `scheduleArxivFetch()` | Debounced (800ms) auto-fetch triggered when an arXiv URL is detected in the resources field |
-| `searchArxivPapers(query)` | Full-text arXiv search, returns up to 10 papers |
+| `searchArxivPapers(query)` | Full-text paper search via OpenAlex, returns up to 10 results |
 | `openPaperSearch()` / `closePaperSearch()` | Opens/closes the paper search modal (⌘P) |
 | `addPaperToGraph(p)` | Creates a node from a search result with all metadata pre-filled |
 | `autoLayout()` | Runs 200-iteration force-directed layout |
+| `loadGraphList()` | Loads/bootstraps the list of named graphs from localStorage |
+| `switchGraph(id)` | Saves current graph, loads new one, refreshes all UI |
+| `graphDataKey(id)` | Returns the localStorage key for a given graph ID |
 
-### arXiv integration
+### Paper metadata APIs
 
-Two entry points:
-1. **Resources field in modal** — paste an `arxiv.org/abs/…` URL and `scheduleArxivFetch()` auto-triggers, filling title, abstract, year, and suggesting tags.
-2. **Paper search modal** (`⌘P` or toolbar `⌕`) — full-text search against arXiv, results rendered with add button; already-in-graph papers shown as `✓ In graph`.
+Two separate APIs are used (both support CORS from GitHub Pages):
 
-arXiv categories are mapped to tags via `ARXIV_CAT_TAGS` constant (e.g. `cs.CV → computer-vision`).
+1. **Fetch by arXiv ID** (`fetchArxivMetadata`) — Semantic Scholar: `https://api.semanticscholar.org/graph/v1/paper/arXiv:<id>`
+2. **Full-text search** (`searchArxivPapers`) — OpenAlex: `https://api.openalex.org/works?search=...`
+
+Both return JSON. `reconstructAbstract()` converts OpenAlex's inverted-index abstract format to plain text.
 
 ### Google Drive
 
-Configured via `GD_CLIENT_ID` constant at the top of the script. Uses GIS (Google Identity Services) OAuth 2.0 with `drive.file` scope. The token client is initialized in `initGoogleDrive()`, called once the GIS script loads. Drive sync saves `{ nodes, edges, nextId }` as `ideagraph_v1.json`. Both `loadData()` and `loadFromGDrive()` pass raw JSON through `migrateData()` before use.
+Configured via `GD_CLIENT_ID` constant at the top of the script. Uses GIS (Google Identity Services) OAuth 2.0 with `drive.file` scope. The token client is initialized in `initGoogleDrive()`, called once the GIS script loads. Drive sync saves the active graph's `{ nodes, edges, nextId }` as `ideagraph_v1.json`. Both `loadData()` and `loadFromGDrive()` pass raw JSON through `migrateData()` before use.
