@@ -819,35 +819,41 @@ window.addSuggestedTag = function(tag) {
   el.value = existing ? existing + ', ' + tag : tag;
 };
 
-// ── Paper Search (arXiv) ───────────────────────────────────────────────
+// ── Paper Search (Semantic Scholar → arXiv) ────────────────────────────
 async function searchArxivPapers(query) {
   const q = encodeURIComponent(query.trim());
-  const url = `https://export.arxiv.org/api/query?search_query=all:${q}&start=0&max_results=10&sortBy=relevance&sortOrder=descending`;
-  const resp = await fetch(url);
+  const url = `https://api.semanticscholar.org/graph/v1/paper/search?query=${q}&limit=10&fields=title,abstract,year,authors,externalIds,fieldsOfStudy,openAccessPdf`;
+  const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
   if (!resp.ok) throw new Error('Search failed');
-  const xml = await resp.text();
-  const doc = new DOMParser().parseFromString(xml, 'text/xml');
-  return [...doc.getElementsByTagName('entry')].map(entry => {
-    const idText = entry.getElementsByTagName('id')[0]?.textContent?.trim() || '';
-    const arxivId = idText.match(/(\d{4}\.\d{4,5})/)?.[1];
-    if (!arxivId) return null;
-    const title = entry.getElementsByTagName('title')[0]?.textContent?.trim().replace(/\s+/g, ' ') || '';
-    const summary = entry.getElementsByTagName('summary')[0]?.textContent?.trim().replace(/\s+/g, ' ') || '';
-    const published = entry.getElementsByTagName('published')[0]?.textContent || '';
-    const year = published ? parseInt(published.slice(0, 4)) : null;
-    const authors = [...entry.getElementsByTagName('author')]
-      .map(a => a.getElementsByTagName('name')[0]?.textContent?.trim()).filter(Boolean);
-    const firstAuthor = authors[0] ? authors[0].split(' ').pop() : '';  // last name
+  const json = await resp.json();
+  return (json.data || []).map(paper => {
+    const arxivId = paper.externalIds?.ArXiv || null;
+    const title = paper.title || '';
+    const summary = paper.abstract || '';
+    const year = paper.year || null;
+    const authors = (paper.authors || []).map(a => a.name);
+    const firstAuthor = authors[0] ? authors[0].split(' ').pop() : '';
     const authorStr = authors.length > 1 ? `${firstAuthor} et al.` : firstAuthor;
-    const cats = [...entry.getElementsByTagName('category')].map(c => c.getAttribute('term')).filter(Boolean);
-    const tags = [...new Set(cats.map(c => ARXIV_CAT_TAGS[c]).filter(Boolean))];
-    return { arxivId, title, abstract: summary, year, authorStr, tags, cats, url: `https://arxiv.org/abs/${arxivId}` };
-  }).filter(Boolean);
+    // Map S2 fields of study to our tag system
+    const fieldMap = {
+      'Computer Vision': 'computer-vision',
+      'Machine Learning': 'machine-learning',
+      'Artificial Intelligence': 'machine-learning',
+      'Natural Language Processing': 'nlp',
+      'Robotics': 'robotics',
+    };
+    const tags = [...new Set((paper.fieldsOfStudy || []).map(f => fieldMap[f]).filter(Boolean))];
+    const cats = (paper.fieldsOfStudy || []);
+    const paperUrl = arxivId
+      ? `https://arxiv.org/abs/${arxivId}`
+      : (paper.openAccessPdf?.url || '');
+    return { arxivId, title, abstract: summary, year, authorStr, tags, cats, url: paperUrl };
+  }).filter(p => p.title);
 }
 
 function isPaperInGraph(arxivId, title) {
   return nodes.some(n =>
-    (n.resources || []).some(r => r.includes(arxivId)) ||
+    (arxivId && (n.resources || []).some(r => r.includes(arxivId))) ||
     n.title.toLowerCase() === title.toLowerCase()
   );
 }
@@ -861,7 +867,7 @@ function openPaperSearch() {
 function closePaperSearch() {
   document.getElementById('paper-search-modal').classList.remove('open');
   document.getElementById('ps-input').value = '';
-  document.getElementById('ps-results').innerHTML = '<div id="ps-status">Type to search arXiv — press Enter or wait</div>';
+  document.getElementById('ps-results').innerHTML = '<div id="ps-status">Type to search papers — press Enter or wait</div>';
 }
 
 function renderPaperResults(papers, query) {
@@ -873,7 +879,7 @@ function renderPaperResults(papers, query) {
   container.innerHTML = '';
   papers.forEach(p => {
     const inGraph = isPaperInGraph(p.arxivId, p.title);
-    const catStr = p.cats.filter(c => c.startsWith('cs.')).slice(0, 2).join(', ');
+    const catStr = p.cats.slice(0, 2).join(', ');
     const tagChips = p.tags.length
       ? p.tags.map(t => `<span style="background:var(--surface3);padding:1px 5px;border-radius:3px;font-size:9px">${t}</span>`).join(' ')
       : '';
