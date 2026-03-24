@@ -158,21 +158,14 @@
   .status-opt:hover { border-color: var(--accent); color: var(--text); }
   .status-opt.selected { color: #fff; border-color: transparent; }
 
-  .mastery-picker { display: flex; gap: 5px; align-items: center; }
-  .mastery-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border2); cursor: pointer; transition: all 0.15s; }
-  .mastery-dot:hover { border-color: var(--accent2); transform: scale(1.1); }
-  .mastery-dot.filled { background: var(--accent); border-color: var(--accent); }
-  .mastery-val-label { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-left: 8px; min-width: 70px; }
+
 
   .resource-link { display: block; font-size: 11px; color: var(--accent2); text-decoration: none; padding: 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.15s; }
   .resource-link:hover { color: var(--text); text-decoration: underline; }
 
   .detail-progress-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
   .status-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-family: 'JetBrains Mono', monospace; border: 1px solid; }
-  .mastery-dots-row { display: flex; gap: 4px; align-items: center; }
-  .mastery-pip { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--border2); }
-  .mastery-pip.filled { border-color: var(--accent); background: var(--accent); }
-  .mastery-pip-label { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-left: 6px; }
+
 
   #status-filter-bar { padding: 6px 14px; border-bottom: 1px solid var(--border); display: flex; gap: 5px; }
   .sf-pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; border: 1px solid var(--border2); color: var(--text2); cursor: pointer; transition: all 0.15s; font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
@@ -386,10 +379,7 @@
         <label class="form-label">STATUS</label>
         <div class="status-picker" id="status-picker"></div>
       </div>
-      <div class="form-row">
-        <label class="form-label">MASTERY LEVEL</label>
-        <div class="mastery-picker" id="mastery-picker"></div>
-      </div>
+
       <div class="form-row">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
           <label class="form-label" style="margin-bottom:0">RESOURCES (one URL per line)</label>
@@ -487,7 +477,6 @@ const STATUS_OPTIONS = [
   { id: 'in-progress', label: 'In Progress',   color: '#f0a830', icon: '◑' },
   { id: 'done',        label: 'Done',          color: '#5ecb8c', icon: '●' },
 ];
-const MASTERY_LABELS = ['None', 'Exposure', 'Familiar', 'Comfortable', 'Proficient', 'Expert'];
 
 let nodes = [];
 let edges = [];
@@ -503,7 +492,6 @@ let activeStatus = null;
 let sidebarView = 'list'; // 'list' | 'order'
 let selectedColor = 'purple';
 let selectedStatus = 'want';
-let selectedMastery = 0;
 let colorExplicitlySet = false;
 let editingNodeId = null;
 let hoveredNode = null;
@@ -935,7 +923,7 @@ function addPaperToGraph(p) {
     p.title, desc, p.tags.join(', '), null,
     w.x + (Math.random() - 0.5) * 300,
     w.y + (Math.random() - 0.5) * 200,
-    'want', 0, [p.url], p.year
+    'want', [p.url], p.year
   );
   toast(`Added: ${p.title.slice(0, 40)}…`);
 }
@@ -1271,16 +1259,6 @@ function drawNodes() {
 
     ctx.shadowBlur = 0;
 
-    // Mastery arc (partial ring outside node)
-    const mastery = n.mastery || 0;
-    if (mastery > 0 && isFiltered) {
-      const arcEnd = -Math.PI/2 + (mastery / 5) * Math.PI * 2;
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, r + 5, -Math.PI/2, arcEnd);
-      ctx.strokeStyle = statusColor;
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-    }
 
     // Recency dot (only show for very recently created: 5 min)
     const age = Date.now() - n.createdAt;
@@ -1411,7 +1389,6 @@ function nodeListItem(n) {
   const stOpt = STATUS_OPTIONS.find(s=>s.id===(n.status||'want'))||STATUS_OPTIONS[0];
   const metaParts = [getEdgesFor(n.id).length + ' connections'];
   if (n.year) metaParts.push(n.year);
-  if (n.mastery) metaParts.push(MASTERY_LABELS[n.mastery]);
   const div = document.createElement('div');
   div.className = 'node-item' + (selectedNode?.id === n.id ? ' selected' : '');
   div.innerHTML = `
@@ -1513,22 +1490,14 @@ function openDetailPanel(n) {
     ).join('');
   } else dsTags.style.display = 'none';
 
-  // Progress (status + mastery)
+  // Progress (status)
   const statusOpt = STATUS_OPTIONS.find(s => s.id === (n.status || 'want')) || STATUS_OPTIONS[0];
-  const masteryLabel = MASTERY_LABELS[n.mastery || 0];
   const progressEl = document.getElementById('detail-progress');
-  const masteryPips = Array.from({length: 5}, (_, i) =>
-    `<span class="mastery-pip ${i < (n.mastery||0) ? 'filled' : ''}"></span>`
-  ).join('');
   progressEl.innerHTML = `
     <div class="detail-progress-row">
       <span class="status-chip" style="color:${statusOpt.color};border-color:${statusOpt.color}44;background:${statusOpt.color}18">
         ${statusOpt.icon} ${statusOpt.label}
       </span>
-    </div>
-    <div class="mastery-dots-row">
-      ${masteryPips}
-      <span class="mastery-pip-label">${masteryLabel}</span>
     </div>`;
 
   // Resources
@@ -1632,7 +1601,7 @@ function animateCam(tx, ty, tz) {
 }
 
 // ── Node CRUD ─────────────────────────────────────────────────────────
-function createNode(title, desc, tags, color, x, y, status, mastery, resources, year) {
+function createNode(title, desc, tags, color, x, y, status, resources, year) {
   const tagArr = tags.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);
   const autoColor = color || (tagArr.length ? tagToColor(tagArr[0]) : 'purple');
   const n = {
@@ -1642,7 +1611,6 @@ function createNode(title, desc, tags, color, x, y, status, mastery, resources, 
     tags: tagArr,
     color: autoColor,
     status: status || 'want',
-    mastery: mastery || 0,
     resources: resources || [],
     year: year || null,
     x: x !== undefined ? x : (Math.random()-0.5)*400,
@@ -1683,7 +1651,6 @@ function openModal(prefillTitle, editId) {
   document.getElementById('form-year').value = '';
   document.getElementById('arxiv-suggestions').style.display = 'none';
   selectedStatus = 'want';
-  selectedMastery = 0;
   colorExplicitlySet = false;
   if (editId) {
     const n = nodes.find(x=>x.id===editId);
@@ -1695,13 +1662,11 @@ function openModal(prefillTitle, editId) {
       document.getElementById('form-year').value = n.year || '';
       selectedColor = n.color;
       selectedStatus = n.status || 'want';
-      selectedMastery = n.mastery || 0;
       colorExplicitlySet = true; // treat existing color as explicit
     }
   }
   renderColorPicker();
   renderStatusPicker();
-  renderMasteryPicker();
   setTimeout(()=>document.getElementById('form-title').focus(), 50);
 }
 
@@ -1730,20 +1695,6 @@ function renderStatusPicker() {
 }
 window.setStatus = function(id) { selectedStatus = id; renderStatusPicker(); };
 
-function renderMasteryPicker() {
-  const mp = document.getElementById('mastery-picker');
-  const dots = Array.from({length: 5}, (_, i) =>
-    `<div class="mastery-dot ${i < selectedMastery ? 'filled' : ''}"
-      title="${MASTERY_LABELS[i+1]}"
-      onclick="setMastery(${i+1})"></div>`
-  ).join('');
-  mp.innerHTML = dots + `<span class="mastery-val-label">${MASTERY_LABELS[selectedMastery]}</span>`;
-}
-window.setMastery = function(val) {
-  selectedMastery = selectedMastery === val ? val - 1 : val;
-  if (selectedMastery < 0) selectedMastery = 0;
-  renderMasteryPicker();
-};
 
 function saveModal() {
   const title = document.getElementById('form-title').value.trim();
@@ -1760,7 +1711,6 @@ function saveModal() {
       n.tags = tags.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);
       n.color = selectedColor;
       n.status = selectedStatus;
-      n.mastery = selectedMastery;
       n.resources = resources;
       n.year = yearVal;
       // Auto re-color if color wasn't explicitly changed and tags changed
@@ -1771,7 +1721,7 @@ function saveModal() {
     }
   } else {
     const w = screenToWorld(canvas.width/2, canvas.height/2);
-    createNode(title, desc, tags, colorExplicitlySet ? selectedColor : null, w.x + (Math.random()-0.5)*120, w.y + (Math.random()-0.5)*80, selectedStatus, selectedMastery, resources, yearVal);
+    createNode(title, desc, tags, colorExplicitlySet ? selectedColor : null, w.x + (Math.random()-0.5)*120, w.y + (Math.random()-0.5)*80, selectedStatus, resources, yearVal);
     toast('Idea added');
   }
   closeModal();
@@ -1877,10 +1827,9 @@ function showTooltip(n, clientX, clientY) {
   if (n.desc) { descEl.style.display = ''; descEl.textContent = n.desc; }
   else descEl.style.display = 'none';
 
-  const mastLabel = MASTERY_LABELS[n.mastery || 0];
   const connCount = getEdgesFor(n.id).length;
   document.getElementById('ht-meta').textContent =
-    `${stOpt.icon} ${stOpt.label}  ·  ${mastLabel}  ·  ${connCount} connection${connCount !== 1 ? 's' : ''}`;
+    `${stOpt.icon} ${stOpt.label}  ·  ${connCount} connection${connCount !== 1 ? 's' : ''}`;
 
   const resEl = document.getElementById('ht-resources');
   if (n.resources && n.resources.length) {
