@@ -757,10 +757,12 @@ function extractArxivId(url) {
 }
 
 async function fetchArxivMetadata(arxivId) {
-  const url = `https://api.openalex.org/works/https://arxiv.org/abs/${arxivId}?select=title,abstract_inverted_index,publication_year,topics`;
+  const url = `https://api.openalex.org/works?filter=ids.arxiv:${arxivId}&select=title,abstract_inverted_index,publication_year,topics`;
   const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
   if (!resp.ok) throw new Error('arXiv fetch failed');
-  const paper = await resp.json();
+  const json = await resp.json();
+  const paper = (json.results || [])[0];
+  if (!paper) throw new Error('Paper not found in OpenAlex');
   const title = paper.title || '';
   const summary = reconstructAbstract(paper.abstract_inverted_index);
   const year = paper.publication_year || null;
@@ -809,7 +811,8 @@ function scheduleArxivFetch() {
       toast('Paper metadata fetched from arXiv ✓');
     } catch(err) {
       btn.textContent = '↓ fetch arXiv'; btn.classList.remove('loading');
-      toast('arXiv fetch failed — check URL or network');
+      toast('arXiv fetch failed: ' + err.message);
+      console.error('arXiv fetch error:', err);
     }
   }, 800);
 }
