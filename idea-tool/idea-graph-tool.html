@@ -1050,24 +1050,23 @@ async function fetchBestGeminiModel(key) {
   });
   if (!resp.ok) throw new Error(`ListModels failed: ${resp.status}`);
   const json = await resp.json();
+  // Only keep general-purpose text chat models
+  const BLOCKLIST = ['embedding', 'vision', 'aqa', 'image', 'tts', 'audio', 'native'];
   const models = (json.models || []).filter(m =>
     (m.supportedGenerationMethods || []).includes('generateContent') &&
     m.name.includes('gemini') &&
-    !m.name.includes('embedding') &&
-    !m.name.includes('vision') &&
-    !m.name.includes('aqa')
+    !BLOCKLIST.some(b => m.name.includes(b))
   );
-  if (!models.length) throw new Error('No compatible Gemini models found for this key');
-  // Score: prefer flash > pro, prefer higher version numbers, penalise exp/preview
+  if (!models.length) throw new Error('No compatible Gemini chat models found for this key');
+  // Score: prefer flash > pro, higher version > lower, penalise exp/preview/thinking
   function score(m) {
     const n = m.name;
     let s = 0;
-    // Extract version number (e.g. 2.5 → 25, 1.5 → 15)
-    const ver = (n.match(/gemini-(\d+\.\d+)/) || [])[1];
+    const ver = (n.match(/gemini-(\d+\.?\d*)/) || [])[1];
     if (ver) s += parseFloat(ver) * 10;
-    if (n.includes('flash')) s += 5;   // fast & free
-    if (n.includes('lite'))  s -= 1;   // flash-lite is lighter
-    if (n.includes('exp') || n.includes('preview')) s -= 3; // unstable
+    if (n.includes('flash')) s += 5;
+    if (n.includes('lite'))  s -= 1;
+    if (n.includes('exp') || n.includes('preview') || n.includes('thinking')) s -= 3;
     return s;
   }
   models.sort((a, b) => score(b) - score(a));
