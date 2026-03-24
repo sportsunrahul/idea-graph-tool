@@ -642,8 +642,10 @@ let hoveredNode = null;
 let qaOpen = false;
 let qaChatHistory = []; // [{role:'user'|'model', text, ts}]
 let qaApiKey = '';
-const QA_KEY_STORAGE = 'ideagraph_gemini_key';
-const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent';
+let qaModel = '';  // resolved at runtime via ListModels
+const QA_KEY_STORAGE   = 'ideagraph_gemini_key';
+const QA_MODEL_STORAGE = 'ideagraph_gemini_model';
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
 // Camera
 let camX = 0, camY = 0, camZoom = 1;
@@ -1021,14 +1023,55 @@ function closePaperSearch() {
 
 function initQA() {
   qaApiKey = localStorage.getItem(QA_KEY_STORAGE) || '';
+  qaModel  = localStorage.getItem(QA_MODEL_STORAGE) || '';
   _updateQAKeyBtn();
 }
 
 function _updateQAKeyBtn() {
   const btn = document.getElementById('qa-key-btn');
   if (!btn) return;
-  if (qaApiKey) { btn.textContent = '⚿ key set'; btn.classList.add('set'); }
-  else { btn.textContent = '⚿ key'; btn.classList.remove('set'); }
+  if (qaApiKey && qaModel) {
+    btn.textContent = `⚿ ${qaModel.replace('models/', '')}`;
+    btn.classList.add('set');
+    btn.title = `Model: ${qaModel} — click to reset key`;
+  } else if (qaApiKey) {
+    btn.textContent = '⚿ detecting…';
+    btn.classList.add('set');
+  } else {
+    btn.textContent = '⚿ key';
+    btn.classList.remove('set');
+    btn.title = 'Set Gemini API key';
+  }
+}
+
+async function fetchBestGeminiModel(key) {
+  const resp = await fetch(`${GEMINI_BASE}/models?key=${encodeURIComponent(key)}`, {
+    headers: { 'Accept': 'application/json' }
+  });
+  if (!resp.ok) throw new Error(`ListModels failed: ${resp.status}`);
+  const json = await resp.json();
+  const models = (json.models || []).filter(m =>
+    (m.supportedGenerationMethods || []).includes('generateContent') &&
+    m.name.includes('gemini') &&
+    !m.name.includes('embedding') &&
+    !m.name.includes('vision') &&
+    !m.name.includes('aqa')
+  );
+  if (!models.length) throw new Error('No compatible Gemini models found for this key');
+  // Score: prefer flash > pro, prefer higher version numbers, penalise exp/preview
+  function score(m) {
+    const n = m.name;
+    let s = 0;
+    // Extract version number (e.g. 2.5 → 25, 1.5 → 15)
+    const ver = (n.match(/gemini-(\d+\.\d+)/) || [])[1];
+    if (ver) s += parseFloat(ver) * 10;
+    if (n.includes('flash')) s += 5;   // fast & free
+    if (n.includes('lite'))  s -= 1;   // flash-lite is lighter
+    if (n.includes('exp') || n.includes('preview')) s -= 3; // unstable
+    return s;
+  }
+  models.sort((a, b) => score(b) - score(a));
+  return models[0].name; // e.g. "models/gemini-2.0-flash"
 }
 
 function openQAPanel() {
@@ -1104,7 +1147,7 @@ Guidelines:
 async function sendQAMessage(text) {
   const trimmed = text.trim();
   if (!trimmed) return;
-  if (!qaApiKey) {
+  if (!qaApiKey || !qaModel) {
     document.getElementById('qa-key-prompt').style.display = '';
     document.getElementById('qa-key-field').focus();
     toast('Please set your Gemini API key first');
@@ -1123,7 +1166,7 @@ async function sendQAMessage(text) {
   const body = { system_instruction: { parts: [{ text: _buildSystemPrompt() }] }, contents };
 
   try {
-    const resp = await fetch(`${GEMINI_ENDPOINT}?key=${encodeURIComponent(qaApiKey)}`, {
+    const resp = await fetch(`${GEMINI_BASE}/${qaModel}:generateContent?key=${encodeURIComponent(qaApiKey)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(body)
@@ -2386,17 +2429,30 @@ document.getElementById('qa-key-btn').onclick = () => {
   promptEl.style.display = isVisible ? 'none' : '';
   if (!isVisible) setTimeout(() => document.getElementById('qa-key-field').focus(), 40);
 };
-document.getElementById('qa-key-save').onclick = () => {
+document.getElementById('qa-key-save').onclick = async () => {
   const key = document.getElementById('qa-key-field').value.trim();
   if (!key) { toast('Please enter an API key'); return; }
-  qaApiKey = key;
-  localStorage.setItem(QA_KEY_STORAGE, key);
-  document.getElementById('qa-key-prompt').style.display = 'none';
-  document.getElementById('qa-key-field').value = '';
-  _updateQAKeyBtn();
-  toast('API key saved ✓');
-  document.getElementById('qa-input').focus();
-  renderQAMessages();
+  const saveBtn = document.getElementById('qa-key-save');
+  saveBtn.textContent = 'detecting…';
+  saveBtn.disabled = true;
+  try {
+    const model = await fetchBestGeminiModel(key);
+    qaApiKey = key;
+    qaModel  = model;
+    localStorage.setItem(QA_KEY_STORAGE, key);
+    localStorage.setItem(QA_MODEL_STORAGE, model);
+    document.getElementById('qa-key-prompt').style.display = 'none';
+    document.getElementById('qa-key-field').value = '';
+    _updateQAKeyBtn();
+    toast(`Ready — using ${model.replace('models/', '')} ✓`);
+    document.getElementById('qa-input').focus();
+    renderQAMessages();
+  } catch (err) {
+    toast(`Key error: ${err.message}`);
+    console.error('Gemini key setup error:', err);
+  }
+  saveBtn.textContent = 'Save';
+  saveBtn.disabled = false;
 };
 document.getElementById('qa-key-field').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('qa-key-save').click();
