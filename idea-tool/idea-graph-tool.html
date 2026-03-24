@@ -784,12 +784,11 @@ function extractArxivId(url) {
 }
 
 async function fetchArxivMetadata(arxivId) {
-  const url = `https://api.openalex.org/works?filter=ids.arxiv:${arxivId}&mailto=ideagraph@user.local`;
+  // OpenAlex direct entity lookup by arXiv ID
+  const url = `https://api.openalex.org/works/arxiv:${arxivId}?mailto=ideagraph@user.local`;
   const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
-  if (!resp.ok) throw new Error(`OpenAlex returned ${resp.status}`);
-  const json = await resp.json();
-  const paper = (json.results || [])[0];
-  if (!paper) throw new Error('Paper not found in OpenAlex');
+  if (!resp.ok) throw new Error(`OpenAlex ${resp.status}: paper not found`);
+  const paper = await resp.json();
   const title = paper.title || '';
   const summary = reconstructAbstract(paper.abstract_inverted_index);
   const year = paper.publication_year || null;
