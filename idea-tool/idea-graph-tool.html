@@ -103,11 +103,14 @@
   #graph-canvas.linking { cursor: crosshair; }
 
   /* ── Toolbar ── */
-  #toolbar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border2); border-radius: 28px; padding: 6px; display: flex; gap: 2px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); z-index: 20; }
-  .tb-btn { width: 36px; height: 36px; border: none; background: transparent; border-radius: 20px; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--text2); transition: all 0.15s; }
+  #toolbar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; padding: 5px 6px; display: flex; gap: 1px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); z-index: 20; }
+  .tb-btn { min-width: 40px; height: 46px; border: none; background: transparent; border-radius: 8px; cursor: pointer; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--text2); transition: all 0.15s; padding: 4px 6px; }
   .tb-btn:hover { background: var(--surface2); color: var(--text); }
   .tb-btn.active { background: var(--accent); color: #fff; }
-  .tb-sep { width: 1px; background: var(--border); margin: 4px 2px; }
+  .tb-sep { width: 1px; background: var(--border); margin: 6px 4px; }
+  .tb-label { font-size: 8px; font-family: 'JetBrains Mono', monospace; color: var(--text3); line-height: 1; white-space: nowrap; pointer-events: none; }
+  .tb-btn:hover .tb-label { color: var(--text2); }
+  .tb-btn.active .tb-label { color: rgba(255,255,255,0.75); }
 
   /* ── Detail Panel ── */
   #detail-panel { position: absolute; right: 0; top: 0; width: 300px; height: 100%; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); z-index: 15; }
@@ -161,7 +164,7 @@
   #zoom-indicator { position: absolute; top: 16px; right: 16px; font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 3px 7px; z-index: 20; }
 
   /* ── Link mode hint ── */
-  #link-hint { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; border-radius: 20px; padding: 5px 14px; font-size: 11px; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 25; font-family: 'JetBrains Mono', monospace; }
+  #link-hint { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--accent); color: var(--text); border-radius: 20px; padding: 6px 18px; font-size: 11px; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 25; font-family: 'JetBrains Mono', monospace; white-space: nowrap; max-width: 500px; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
   #link-hint.show { opacity: 1; }
 
   /* ── Minimap ── */
@@ -342,6 +345,33 @@
   }
   #qa-send:hover { opacity: 0.85; }
   #qa-send:disabled { opacity: 0.35; cursor: default; }
+
+  /* ── Right-click context menu ── */
+  #ctx-menu { position: fixed; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); box-shadow: 0 8px 28px rgba(0,0,0,0.55); z-index: 80; min-width: 170px; overflow: hidden; display: none; padding: 4px 0; }
+  .ctx-item { padding: 8px 14px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: var(--text2); transition: background 0.1s; user-select: none; }
+  .ctx-icon { font-size: 12px; width: 14px; text-align: center; flex-shrink: 0; color: var(--text3); }
+  .ctx-item:hover { background: var(--surface2); color: var(--text); }
+  .ctx-item:hover .ctx-icon { color: var(--text2); }
+  .ctx-item.danger:hover { color: var(--coral); background: var(--coral-dim); }
+  .ctx-item.danger:hover .ctx-icon { color: var(--coral); }
+  .ctx-sep { height: 1px; background: var(--border); margin: 3px 0; }
+
+  /* ── Keyboard shortcuts modal ── */
+  #shortcuts-modal { position: absolute; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 55; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  #shortcuts-modal.open { opacity: 1; pointer-events: all; }
+  #shortcuts-box { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; width: 420px; max-width: 90vw; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  #shortcuts-box::-webkit-scrollbar { width: 4px; }
+  #shortcuts-box::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  #shortcuts-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  #shortcuts-head h3 { font-size: 14px; font-weight: 600; }
+  #shortcuts-close-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; padding: 2px; }
+  #shortcuts-close-btn:hover { color: var(--text); }
+  .sc-section { padding: 10px 18px; border-bottom: 1px solid var(--border); }
+  .sc-section:last-child { border-bottom: none; }
+  .sc-section-title { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-bottom: 7px; }
+  .sc-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; font-size: 12px; color: var(--text2); gap: 12px; }
+  .sc-keys { display: flex; gap: 4px; flex-shrink: 0; }
+  kbd { background: var(--surface3); border: 1px solid var(--border2); border-bottom-width: 2px; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--text); line-height: 1.5; }
 </style>
 <script>
   // Must be defined BEFORE the GIS script loads so the callback isn't missed
@@ -553,21 +583,63 @@
 
   <!-- Toolbar -->
   <div id="toolbar">
-    <button class="tb-btn" id="tb-add" title="Add node (⌘K)">＋</button>
-    <button class="tb-btn" id="tb-paper-search" title="Search arXiv papers (⌘P)">⌕</button>
+    <button class="tb-btn" id="tb-add" title="Add node (⌘K)">＋<span class="tb-label">Add</span></button>
+    <button class="tb-btn" id="tb-paper-search" title="Search papers (⌘P)">⌕<span class="tb-label">Papers</span></button>
     <div class="tb-sep"></div>
-    <button class="tb-btn" id="tb-link" title="Link mode (L)">⟶</button>
+    <button class="tb-btn" id="tb-link" title="Link mode (L)">⟶<span class="tb-label">Link</span></button>
     <div class="tb-sep"></div>
-    <button class="tb-btn" id="tb-fit" title="Fit view (F)">⊡</button>
-    <button class="tb-btn" id="tb-zoom-in" title="Zoom in (+)">+</button>
-    <button class="tb-btn" id="tb-zoom-out" title="Zoom out (-)">−</button>
+    <button class="tb-btn" id="tb-fit" title="Fit view (F)">⊡<span class="tb-label">Fit</span></button>
+    <button class="tb-btn" id="tb-zoom-in" title="Zoom in (+)">+<span class="tb-label">Zoom</span></button>
+    <button class="tb-btn" id="tb-zoom-out" title="Zoom out (-)">−<span class="tb-label">Out</span></button>
     <div class="tb-sep"></div>
-    <button class="tb-btn" id="tb-layout" title="Auto layout">⊕</button>
-    <button class="tb-btn" id="tb-export" title="Export JSON">↓</button>
+    <button class="tb-btn" id="tb-layout" title="Auto layout">⊕<span class="tb-label">Layout</span></button>
+    <button class="tb-btn" id="tb-export" title="Export JSON">↓<span class="tb-label">Export</span></button>
     <div class="tb-sep"></div>
-    <button class="tb-btn" id="tb-drive" title="Connect Google Drive">☁</button>
+    <button class="tb-btn" id="tb-drive" title="Connect Google Drive">☁<span class="tb-label">Drive</span></button>
     <div class="tb-sep"></div>
-    <button class="tb-btn" id="tb-qa" title="Ask AI (⌘/)">✦</button>
+    <button class="tb-btn" id="tb-qa" title="Ask AI (⌘/)">✦<span class="tb-label">Ask AI</span></button>
+    <button class="tb-btn" id="tb-help" title="Keyboard shortcuts">?<span class="tb-label">Help</span></button>
+  </div>
+
+  <!-- Right-click context menu -->
+  <div id="ctx-menu"></div>
+
+  <!-- Keyboard shortcuts modal -->
+  <div id="shortcuts-modal">
+    <div id="shortcuts-box">
+      <div id="shortcuts-head">
+        <h3>Keyboard Shortcuts</h3>
+        <button id="shortcuts-close-btn">✕</button>
+      </div>
+      <div class="sc-section">
+        <div class="sc-section-title">Creating &amp; Editing</div>
+        <div class="sc-row"><span>Add node (full editor)</span><span class="sc-keys"><kbd>⌘</kbd><kbd>K</kbd></span></div>
+        <div class="sc-row"><span>Quick add idea</span><span class="sc-keys"><kbd>↵</kbd> in quick-add</span></div>
+        <div class="sc-row"><span>Create node at position</span><span class="sc-keys">Double-click canvas</span></div>
+        <div class="sc-row"><span>Edit selected node</span><span class="sc-keys">Double-click node</span></div>
+        <div class="sc-row"><span>Delete selected node</span><span class="sc-keys"><kbd>Del</kbd></span></div>
+      </div>
+      <div class="sc-section">
+        <div class="sc-section-title">Linking</div>
+        <div class="sc-row"><span>Link selected node (related)</span><span class="sc-keys"><kbd>L</kbd></span></div>
+        <div class="sc-row"><span>Prerequisite / improves link</span><span class="sc-keys">↳ Prereq / ↑ Improves buttons</span></div>
+        <div class="sc-row"><span>Quick link menu</span><span class="sc-keys">Right-click node</span></div>
+        <div class="sc-row"><span>Cancel link mode</span><span class="sc-keys"><kbd>Esc</kbd></span></div>
+      </div>
+      <div class="sc-section">
+        <div class="sc-section-title">Navigation</div>
+        <div class="sc-row"><span>Fit all nodes in view</span><span class="sc-keys"><kbd>F</kbd></span></div>
+        <div class="sc-row"><span>Zoom in / out</span><span class="sc-keys"><kbd>+</kbd> / <kbd>−</kbd></span></div>
+        <div class="sc-row"><span>Pan canvas</span><span class="sc-keys">Drag empty space</span></div>
+        <div class="sc-row"><span>Zoom to cursor</span><span class="sc-keys">Scroll wheel</span></div>
+      </div>
+      <div class="sc-section">
+        <div class="sc-section-title">Panels</div>
+        <div class="sc-row"><span>Search arXiv papers</span><span class="sc-keys"><kbd>⌘</kbd><kbd>P</kbd></span></div>
+        <div class="sc-row"><span>Ask AI about graph</span><span class="sc-keys"><kbd>⌘</kbd><kbd>/</kbd></span></div>
+        <div class="sc-row"><span>Close / cancel any panel</span><span class="sc-keys"><kbd>Esc</kbd></span></div>
+      </div>
+    </div>
   </div>
 
   <div id="toast"></div>
@@ -601,7 +673,7 @@ function tagToColor(tag) {
   return opts[h % opts.length];
 }
 
-const VERSION = '1.3.0';
+const VERSION = '1.4.0';
 const GRAPHS_KEY = 'ideagraph_graphs';
 const ACTIVE_KEY = 'ideagraph_active';
 
@@ -1855,6 +1927,19 @@ function updateSidebar() {
     pill.onclick = () => { activeTag = activeTag === t ? null : t; updateSidebar(); draw(); };
     tagsEl.appendChild(pill);
   });
+  if (activeTag || activeStatus || searchQuery) {
+    const clr = document.createElement('div');
+    clr.className = 'tag-pill';
+    clr.style.cssText = 'color:var(--coral);border-color:rgba(240,96,96,0.35)';
+    clr.textContent = '✕ clear';
+    clr.onclick = () => {
+      activeTag = null; activeStatus = null; searchQuery = '';
+      document.getElementById('search-input').value = '';
+      document.querySelectorAll('.sf-pill').forEach(p => { p.classList.remove('active'); p.style.background=''; p.style.borderColor=''; });
+      updateSidebar(); draw();
+    };
+    tagsEl.appendChild(clr);
+  }
 
   updateStudyNextCard();
 }
@@ -2118,8 +2203,10 @@ function saveModal() {
       toast('Node updated');
     }
   } else {
-    const w = screenToWorld(canvas.width/2, canvas.height/2);
-    createNode(title, desc, tags, colorExplicitlySet ? selectedColor : null, w.x + (Math.random()-0.5)*120, w.y + (Math.random()-0.5)*80, selectedStatus, resources, yearVal);
+    const px = canvas._pendingX, py = canvas._pendingY;
+    canvas._pendingX = canvas._pendingY = null;
+    const w = (px != null) ? { x: px, y: py } : screenToWorld(canvas.width/2, canvas.height/2);
+    createNode(title, desc, tags, colorExplicitlySet ? selectedColor : null, w.x + (Math.random()-0.5)*60, w.y + (Math.random()-0.5)*60, selectedStatus, resources, yearVal);
     toast('Idea added');
   }
   closeModal();
@@ -2131,8 +2218,12 @@ function enterLinkMode(sourceNode) {
   linkSourceNode = sourceNode || selectedNode;
   document.getElementById('tb-link').classList.add('active');
   canvas.classList.add('linking');
+  const typeLabel = prereqLinkMode ? 'prerequisite' : improvesLinkMode ? 'improves' : 'related';
+  const typeColor = prereqLinkMode ? 'var(--teal)' : improvesLinkMode ? 'var(--amber)' : 'var(--accent2)';
+  const srcName = linkSourceNode ? linkSourceNode.title.slice(0, 28) + (linkSourceNode.title.length > 28 ? '…' : '') : '';
+  document.getElementById('link-hint').innerHTML =
+    `Creating <span style="color:${typeColor};font-weight:600">${typeLabel}</span> link from <strong>${srcName}</strong> → click target &nbsp;·&nbsp; <span style="opacity:0.6">Esc to cancel</span>`;
   document.getElementById('link-hint').classList.add('show');
-  toast('Click another node to link');
 }
 function exitLinkMode() {
   linkMode = false;
@@ -2262,6 +2353,43 @@ function updateZoomIndicator() {
   document.getElementById('zoom-indicator').textContent = Math.round(camZoom*100) + '%';
 }
 
+// ── Context menu ──────────────────────────────────────────────────────
+let ctxMenuNode = null;
+function showCtxMenu(clientX, clientY, n) {
+  ctxMenuNode = n;
+  const menu = document.getElementById('ctx-menu');
+  const ITEMS = [
+    { icon: '✎', label: 'Edit node', action: () => openModal(null, n.id) },
+    { sep: true },
+    { icon: '⟶', label: 'Link (related)', action: () => { prereqLinkMode=false; improvesLinkMode=false; enterLinkMode(n); } },
+    { icon: '↳', label: 'Link as prerequisite', iconColor: 'var(--teal)', action: () => { prereqLinkMode=true; improvesLinkMode=false; enterLinkMode(n); } },
+    { icon: '↑', label: 'Link as improves upon', iconColor: 'var(--amber)', action: () => { improvesLinkMode=true; prereqLinkMode=false; enterLinkMode(n); } },
+    { sep: true },
+    { icon: '⊡', label: 'Focus on canvas', action: () => selectAndFocus(n.id) },
+    { sep: true },
+    { icon: '✕', label: 'Delete node', danger: true, action: () => { if (confirm(`Delete "${n.title}"?`)) deleteNode(n.id); } },
+  ];
+  menu.innerHTML = ITEMS.map(item => {
+    if (item.sep) return '<div class="ctx-sep"></div>';
+    return `<div class="ctx-item${item.danger ? ' danger' : ''}" data-ctx-action>
+      <span class="ctx-icon"${item.iconColor ? ` style="color:${item.iconColor}"` : ''}>${item.icon}</span>${item.label}</div>`;
+  }).join('');
+  let ai = 0;
+  menu.querySelectorAll('[data-ctx-action]').forEach(el => {
+    while (ITEMS[ai] && ITEMS[ai].sep) ai++;
+    const fn = ITEMS[ai++]?.action;
+    if (fn) el.onclick = (e) => { e.stopPropagation(); hideCtxMenu(); fn(); };
+  });
+  menu.style.display = 'block';
+  const menuW = 185, menuH = menu.offsetHeight || 280;
+  menu.style.left = Math.min(clientX, window.innerWidth - menuW - 8) + 'px';
+  menu.style.top  = Math.min(clientY, window.innerHeight - menuH - 8) + 'px';
+}
+function hideCtxMenu() {
+  document.getElementById('ctx-menu').style.display = 'none';
+  ctxMenuNode = null;
+}
+
 // ── Input events ──────────────────────────────────────────────────────
 // Quick add
 const quickInput = document.getElementById('quick-input');
@@ -2288,7 +2416,7 @@ document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openModal(); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'p') { e.preventDefault(); openPaperSearch(); }
   if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); if (qaOpen) closeQAPanel(); else openQAPanel(); }
-  if (e.key === 'Escape') { exitLinkMode(); closeModal(); closePaperSearch(); closeQAPanel(); }
+  if (e.key === 'Escape') { exitLinkMode(); closeModal(); closePaperSearch(); closeQAPanel(); document.getElementById('shortcuts-modal').classList.remove('open'); hideCtxMenu(); }
   if (e.key === 'l' || e.key === 'L') { if (selectedNode) enterLinkMode(); }
   if (e.key === 'f' || e.key === 'F') fitView();
   if (e.key === '+' || e.key === '=') { camZoom = Math.min(camZoom*1.15, 4); draw(); }
@@ -2397,12 +2525,23 @@ canvas.addEventListener('dblclick', e => {
   const cx = e.clientX - rect.left;
   const cy = e.clientY - rect.top;
   const hit = hitNode(cx, cy);
-  if (!hit) {
+  if (hit) {
+    openModal(null, hit.id);
+  } else {
     const w = screenToWorld(cx, cy);
-    openModal('');
-    // Store position for creation
     canvas._pendingX = w.x;
     canvas._pendingY = w.y;
+    openModal('');
+  }
+});
+
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const hit = hitNode(e.clientX - rect.left, e.clientY - rect.top);
+  if (hit) {
+    selectNode(hit);
+    showCtxMenu(e.clientX, e.clientY, hit);
   }
 });
 
@@ -2420,6 +2559,9 @@ document.getElementById('tb-drive').oncontextmenu = onDriveButtonRightClick;
 
 // Q&A panel
 document.getElementById('tb-qa').onclick = () => { if (qaOpen) closeQAPanel(); else openQAPanel(); };
+document.getElementById('tb-help').onclick = () => document.getElementById('shortcuts-modal').classList.add('open');
+document.getElementById('shortcuts-close-btn').onclick = () => document.getElementById('shortcuts-modal').classList.remove('open');
+document.getElementById('shortcuts-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
 document.getElementById('qa-close').onclick = closeQAPanel;
 document.getElementById('qa-panel').addEventListener('click', e => e.stopPropagation());
 document.getElementById('qa-key-btn').onclick = () => {
@@ -2630,6 +2772,9 @@ window.deleteGraph = function(id) {
 document.addEventListener('click', (e) => {
   if (!document.getElementById('graph-selector').contains(e.target)) {
     document.getElementById('graph-dropdown').classList.remove('open');
+  }
+  if (!document.getElementById('ctx-menu').contains(e.target)) {
+    hideCtxMenu();
   }
 });
 
